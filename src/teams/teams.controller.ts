@@ -1,13 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 import { TeamsService } from './teams.service';
 import { CurrentUser, Public, Roles } from '../common/decorators';
 import { RegistrationStatus, UserRole } from '../common/enums';
@@ -23,6 +24,29 @@ class ApproveDto {
   credentials?: { username: string; password: string }[];
 }
 
+class AddMemberDto {
+  @IsOptional() @IsString() epicUsername?: string;
+  @IsOptional() @IsString() steamUsername?: string;
+  @IsOptional() @IsString() rank?: string;
+  @IsOptional() @IsString() screenshotUrl?: string;
+  @IsOptional() @IsBoolean() isCaptain?: boolean;
+  @IsOptional() @IsString() username?: string;
+  @IsOptional() @IsString() password?: string;
+}
+
+class UpdateMemberDto {
+  @IsOptional() @IsString() epicUsername?: string;
+  @IsOptional() @IsString() steamUsername?: string;
+  @IsOptional() @IsString() rank?: string;
+  @IsOptional() @IsString() screenshotUrl?: string;
+  @IsOptional() @IsBoolean() isCaptain?: boolean;
+}
+
+class MemberAccessDto {
+  @IsBoolean()
+  active: boolean;
+}
+
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teams: TeamsService) {}
@@ -31,6 +55,12 @@ export class TeamsController {
   @Get()
   findAll() {
     return this.teams.findAll();
+  }
+
+  @Public()
+  @Get('count')
+  count() {
+    return this.teams.count();
   }
 
   @Public()
@@ -93,5 +123,31 @@ export class TeamsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: any) {
     return this.teams.update(id, body);
+  }
+
+  // -------- Roster (admin) --------
+
+  @Roles(UserRole.ADMIN)
+  @Post(':id/members')
+  addMember(@Param('id') id: string, @Body() dto: AddMemberDto) {
+    return this.teams.addMember(id, dto);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Patch('members/:memberId')
+  updateMember(@Param('memberId') memberId: string, @Body() dto: UpdateMemberDto) {
+    return this.teams.updateMember(memberId, dto as any);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Patch('members/:memberId/access')
+  setMemberAccess(@Param('memberId') memberId: string, @Body() dto: MemberAccessDto) {
+    return this.teams.setMemberAccess(memberId, dto.active);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Delete('members/:memberId')
+  removeMember(@Param('memberId') memberId: string) {
+    return this.teams.removeMember(memberId);
   }
 }

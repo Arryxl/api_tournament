@@ -1,7 +1,13 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { IsArray } from 'class-validator';
 import { GroupsService } from './groups.service';
 import { Public, Roles } from '../common/decorators';
 import { UserRole } from '../common/enums';
+
+class CommitDrawDto {
+  @IsArray()
+  assignments: { teamId: string; groupName: string }[];
+}
 
 @Controller('groups')
 export class GroupsController {
@@ -23,6 +29,12 @@ export class GroupsController {
   @Post('draw')
   draw() {
     return this.groups.draw();
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Post('draw/commit')
+  commit(@Body() dto: CommitDrawDto) {
+    return this.groups.commit(dto.assignments);
   }
 
   @Public()

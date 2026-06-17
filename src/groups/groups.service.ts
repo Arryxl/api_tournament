@@ -98,4 +98,28 @@ export class GroupsService {
     }
     return this.findAll();
   }
+
+  /**
+   * Persiste el resultado de un sorteo ya revelado en vivo. Recibe la
+   * asignación equipo → grupo decidida en el control deck y la guarda
+   * (reescribe groupId de cada equipo y recrea sus standings en cero).
+   */
+  async commit(assignments: { teamId: string; groupName: string }[]) {
+    if (!assignments?.length) {
+      throw new BadRequestException('No hay asignaciones para guardar');
+    }
+    const groups = await this.ensureGroups();
+    const byName = new Map(groups.map((g) => [g.name, g]));
+
+    await this.standings.delete({});
+    for (const a of assignments) {
+      const group = byName.get(a.groupName);
+      if (!group) continue;
+      await this.teams.update({ id: a.teamId }, { groupId: group.id });
+      await this.standings.save(
+        this.standings.create({ groupId: group.id, teamId: a.teamId }),
+      );
+    }
+    return this.findAll();
+  }
 }

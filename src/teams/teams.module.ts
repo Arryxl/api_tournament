@@ -5,6 +5,7 @@ import {
   RegistrationForm,
   Team,
   TeamMember,
+  TournamentSettings,
   User,
 } from '../entities';
 import { TeamsService } from './teams.service';
@@ -18,6 +19,7 @@ import { TeamsController } from './teams.controller';
       RegistrationForm,
       User,
       PlayerStat,
+      TournamentSettings,
     ]),
   ],
   controllers: [TeamsController],

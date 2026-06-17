@@ -22,6 +22,10 @@ export class TournamentSettings {
   @Column({ name: 'tournament_started', type: 'boolean', default: false })
   tournamentStarted: boolean;
 
+  /** Cupo de equipos del torneo (para el contador de inscripciones). */
+  @Column({ name: 'team_capacity', type: 'int', default: 16 })
+  teamCapacity: number;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

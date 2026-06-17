@@ -11,6 +11,7 @@ import {
   RegistrationForm,
   Team,
   TeamMember,
+  TournamentSettings,
   User,
 } from '../entities';
 import {
@@ -30,14 +31,25 @@ export class TeamsService {
     private readonly forms: Repository<RegistrationForm>,
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(PlayerStat) private readonly stats: Repository<PlayerStat>,
+    @InjectRepository(TournamentSettings)
+    private readonly settings: Repository<TournamentSettings>,
     private readonly dataSource: DataSource,
   ) {}
 
-  findAll() {
-    return this.teams.find({
-      relations: { members: true, group: true },
+  /** Quita el hash de contraseña del usuario embebido en cada miembro. */
+  private sanitize(team: Team): Team {
+    team.members?.forEach((m) => {
+      if (m.user) delete (m.user as Partial<User>).passwordHash;
+    });
+    return team;
+  }
+
+  async findAll() {
+    const list = await this.teams.find({
+      relations: { members: { user: true }, group: true },
       order: { createdAt: 'DESC' },
     });
+    return list.map((t) => this.sanitize(t));
   }
 
   async findOne(id: string) {
@@ -46,7 +58,20 @@ export class TeamsService {
       relations: { members: { user: true }, group: true, captain: true },
     });
     if (!team) throw new NotFoundException('Equipo no encontrado');
-    return team;
+    return this.sanitize(team);
+  }
+
+  /** Conteo de equipos aprobados/pendientes y el cupo configurado. */
+  async count() {
+    const [approved, pending] = await Promise.all([
+      this.teams.count({ where: { status: TeamStatus.APPROVED } }),
+      this.teams.count({ where: { status: TeamStatus.PENDING } }),
+    ]);
+    const settings = await this.settings.findOne({
+      where: {},
+      order: { updatedAt: 'DESC' },
+    });
+    return { approved, pending, capacity: settings?.teamCapacity ?? 16 };
   }
 
   /** Equipo al que pertenece el usuario autenticado (por su membresía). */
@@ -110,26 +135,17 @@ export class TeamsService {
       });
       await manager.save(team);
 
-      const players = [
-        {
-          epic: form.player1Epic,
-          steam: form.player1Steam,
-          rank: form.player1Rank,
-          shot: form.player1Screenshot,
-        },
-        {
-          epic: form.player2Epic,
-          steam: form.player2Steam,
-          rank: form.player2Rank,
-          shot: form.player2Screenshot,
-        },
-        {
-          epic: form.player3Epic,
-          steam: form.player3Steam,
-          rank: form.player3Rank,
-          shot: form.player3Screenshot,
-        },
-      ];
+      // Titulares (1–3) + suplentes (4–5). Se conserva el número original
+      // de cada jugador (clave para capitán, suplencia y unicidad).
+      const players = [1, 2, 3, 4, 5]
+        .map((n) => ({
+          num: n,
+          epic: (form as any)[`player${n}Epic`] as string | null,
+          steam: (form as any)[`player${n}Steam`] as string | null,
+          rank: (form as any)[`player${n}Rank`] as string | null,
+          shot: (form as any)[`player${n}Screenshot`] as string | null,
+        }))
+        .filter((p) => p.epic || p.steam);
 
       const generated: { playerNumber: number; username: string; password: string }[] = [];
       let captainId: string | null = null;
@@ -138,10 +154,10 @@ export class TeamsService {
         const p = players[i];
         const cred = credentials?.[i];
         const baseName =
-          (p.epic || p.steam || `${form.teamName}_p${i + 1}`)
+          (p.epic || p.steam || `${form.teamName}_p${p.num}`)
             .toLowerCase()
             .replace(/[^a-z0-9_]/g, '')
-            .slice(0, 40) || `${form.teamName.toLowerCase()}p${i + 1}`;
+            .slice(0, 40) || `${form.teamName.toLowerCase()}p${p.num}`;
         const username = cred?.username || `${baseName}_${Math.random().toString(36).slice(2, 6)}`;
         const password = cred?.password || Math.random().toString(36).slice(2, 10);
 
@@ -153,7 +169,7 @@ export class TeamsService {
         });
         await manager.save(user);
 
-        const isCaptain = form.captainPlayer === i + 1;
+        const isCaptain = form.captainPlayer === p.num;
         if (isCaptain) captainId = user.id;
 
         const member = manager.create(TeamMember, {
@@ -164,11 +180,11 @@ export class TeamsService {
           rank: (p.rank as PlayerRank) ?? null,
           screenshotUrl: p.shot,
           isCaptain,
-          playerNumber: i + 1,
+          playerNumber: p.num,
         });
         await manager.save(member);
 
-        generated.push({ playerNumber: i + 1, username, password });
+        generated.push({ playerNumber: p.num, username, password });
       }
 
       if (captainId) {
@@ -201,6 +217,114 @@ export class TeamsService {
     Object.assign(team, data);
     await this.teams.save(team);
     return team;
+  }
+
+  // -------- Gestión de roster (admin) --------
+
+  /**
+   * Agrega un jugador a un equipo (p. ej. un reemplazo). Crea su usuario
+   * candidato y devuelve las credenciales generadas.
+   */
+  async addMember(
+    teamId: string,
+    data: {
+      epicUsername?: string;
+      steamUsername?: string;
+      rank?: string;
+      screenshotUrl?: string;
+      isCaptain?: boolean;
+      username?: string;
+      password?: string;
+    },
+  ) {
+    const team = await this.teams.findOne({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Equipo no encontrado');
+    if (!data.epicUsername && !data.steamUsername) {
+      throw new BadRequestException('El jugador necesita al menos un usuario (Epic o Steam)');
+    }
+
+    const existing = await this.members.find({ where: { teamId } });
+    const nextNumber = existing.reduce((max, m) => Math.max(max, m.playerNumber), 0) + 1;
+
+    return this.dataSource.transaction(async (manager) => {
+      const base =
+        (data.epicUsername || data.steamUsername || `${team.name}_p${nextNumber}`)
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '')
+          .slice(0, 40) || `${team.name.toLowerCase()}p${nextNumber}`;
+      const username = data.username || `${base}_${Math.random().toString(36).slice(2, 6)}`;
+      const password = data.password || Math.random().toString(36).slice(2, 10);
+
+      const user = manager.create(User, {
+        username,
+        passwordHash: await bcrypt.hash(password, 10),
+        role: UserRole.CANDIDATE,
+        coins: 0,
+      });
+      await manager.save(user);
+
+      if (data.isCaptain) {
+        await manager.update(TeamMember, { teamId }, { isCaptain: false });
+      }
+
+      const member = manager.create(TeamMember, {
+        teamId,
+        userId: user.id,
+        epicUsername: data.epicUsername ?? null,
+        steamUsername: data.steamUsername ?? null,
+        rank: (data.rank as PlayerRank) ?? null,
+        screenshotUrl: data.screenshotUrl ?? null,
+        isCaptain: !!data.isCaptain,
+        playerNumber: nextNumber,
+      });
+      await manager.save(member);
+
+      if (data.isCaptain) {
+        await manager.update(Team, { id: teamId }, { captainId: user.id });
+      }
+
+      return { member, credentials: { playerNumber: nextNumber, username, password } };
+    });
+  }
+
+  /** Edita los datos de un miembro (Epic/Steam/rango/captura/capitán). */
+  async updateMember(
+    memberId: string,
+    data: Partial<
+      Pick<TeamMember, 'epicUsername' | 'steamUsername' | 'rank' | 'screenshotUrl' | 'isCaptain'>
+    >,
+  ) {
+    const member = await this.members.findOne({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Jugador no encontrado');
+    if (data.isCaptain) {
+      await this.members.update({ teamId: member.teamId }, { isCaptain: false });
+      await this.teams.update({ id: member.teamId }, { captainId: member.userId });
+    }
+    Object.assign(member, data);
+    await this.members.save(member);
+    return member;
+  }
+
+  /** Revoca o restaura el acceso de un jugador (inhabilita su cuenta). */
+  async setMemberAccess(memberId: string, active: boolean) {
+    const member = await this.members.findOne({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Jugador no encontrado');
+    if (!member.userId) {
+      throw new BadRequestException('Este jugador no tiene una cuenta asociada');
+    }
+    await this.users.update({ id: member.userId }, { isActive: active });
+    return { ok: true, active };
+  }
+
+  /** Quita a un jugador del equipo y deshabilita su cuenta. */
+  async removeMember(memberId: string) {
+    const member = await this.members.findOne({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Jugador no encontrado');
+    if (member.userId) {
+      await this.users.update({ id: member.userId }, { isActive: false });
+    }
+    await this.members.delete({ id: memberId });
+    return { ok: true };
   }
 
   async getStats(teamId: string) {

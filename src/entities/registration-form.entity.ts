@@ -47,6 +47,25 @@ export class RegistrationForm {
   @Column({ name: 'player3_screenshot', type: 'varchar', length: 500, nullable: true })
   player3Screenshot: string | null;
 
+  // Suplentes (jugadores 4 y 5) — mismos requisitos que los titulares.
+  @Column({ name: 'player4_epic', type: 'varchar', length: 100, nullable: true })
+  player4Epic: string | null;
+  @Column({ name: 'player4_steam', type: 'varchar', length: 100, nullable: true })
+  player4Steam: string | null;
+  @Column({ name: 'player4_rank', type: 'varchar', length: 20, nullable: true })
+  player4Rank: string | null;
+  @Column({ name: 'player4_screenshot', type: 'varchar', length: 500, nullable: true })
+  player4Screenshot: string | null;
+
+  @Column({ name: 'player5_epic', type: 'varchar', length: 100, nullable: true })
+  player5Epic: string | null;
+  @Column({ name: 'player5_steam', type: 'varchar', length: 100, nullable: true })
+  player5Steam: string | null;
+  @Column({ name: 'player5_rank', type: 'varchar', length: 20, nullable: true })
+  player5Rank: string | null;
+  @Column({ name: 'player5_screenshot', type: 'varchar', length: 500, nullable: true })
+  player5Screenshot: string | null;
+
   @Column({ name: 'captain_player', type: 'int', nullable: true })
   captainPlayer: number | null;
 

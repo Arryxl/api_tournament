@@ -6,6 +6,7 @@ import { TournamentSettings } from '../entities';
 export class UpdateSettingsDto {
   registrationsOpen?: boolean;
   tournamentStarted?: boolean;
+  teamCapacity?: number;
 }
 
 @Injectable()
@@ -34,6 +35,9 @@ export class SettingsService {
     }
     if (typeof dto.tournamentStarted === 'boolean') {
       settings.tournamentStarted = dto.tournamentStarted;
+    }
+    if (typeof dto.teamCapacity === 'number' && dto.teamCapacity > 0) {
+      settings.teamCapacity = Math.floor(dto.teamCapacity);
     }
     return this.repo.save(settings);
   }
