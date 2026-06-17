@@ -40,6 +40,14 @@ export class Team {
   @Column({ type: 'enum', enum: TeamStatus, default: TeamStatus.PENDING })
   status: TeamStatus;
 
+  // Medio de contacto del capitán (heredado de la inscripción): por aquí el
+  // admin envía credenciales y avisos del torneo. 'discord' | 'email'.
+  @Column({ name: 'contact_method', type: 'varchar', length: 20, nullable: true })
+  contactMethod: string | null;
+
+  @Column({ name: 'contact_value', type: 'varchar', length: 150, nullable: true })
+  contactValue: string | null;
+
   @OneToMany(() => TeamMember, (member) => member.team)
   members: TeamMember[];
 

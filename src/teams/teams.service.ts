@@ -132,6 +132,8 @@ export class TeamsService {
         name: form.teamName,
         shieldUrl: form.shieldUrl,
         status: TeamStatus.APPROVED,
+        contactMethod: form.contactMethod,
+        contactValue: form.contactValue,
       });
       await manager.save(team);
 

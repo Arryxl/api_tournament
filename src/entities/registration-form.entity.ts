@@ -69,6 +69,14 @@ export class RegistrationForm {
   @Column({ name: 'captain_player', type: 'int', nullable: true })
   captainPlayer: number | null;
 
+  // Medio por el que el admin enviará la respuesta y las credenciales de
+  // ingreso al torneo: 'discord' | 'email'.
+  @Column({ name: 'contact_method', type: 'varchar', length: 20, nullable: true })
+  contactMethod: string | null;
+
+  @Column({ name: 'contact_value', type: 'varchar', length: 150, nullable: true })
+  contactValue: string | null;
+
   @Column({ type: 'enum', enum: RegistrationStatus, default: RegistrationStatus.PENDING })
   status: RegistrationStatus;
 
