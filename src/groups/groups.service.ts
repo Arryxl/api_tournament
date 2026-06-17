@@ -85,7 +85,7 @@ export class GroupsService {
     const shuffled = [...approved].sort(() => Math.random() - 0.5);
 
     // limpiar standings previos
-    await this.standings.delete({});
+    await this.standings.createQueryBuilder().delete().execute();
 
     for (let i = 0; i < shuffled.length; i++) {
       const team = shuffled[i];
@@ -111,7 +111,7 @@ export class GroupsService {
     const groups = await this.ensureGroups();
     const byName = new Map(groups.map((g) => [g.name, g]));
 
-    await this.standings.delete({});
+    await this.standings.createQueryBuilder().delete().execute();
     for (const a of assignments) {
       const group = byName.get(a.groupName);
       if (!group) continue;
