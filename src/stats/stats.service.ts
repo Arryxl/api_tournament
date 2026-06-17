@@ -56,4 +56,45 @@ export class StatsService {
       relations: { match: true, user: true },
     });
   }
+
+  matchStats(matchId: string) {
+    return this.stats.find({
+      where: { matchId },
+      relations: { user: true, team: true },
+    });
+  }
+
+  /** [ADMIN] Reemplaza las stats individuales de un partido (corrección manual). */
+  async setMatchStats(matchId: string, rows: MatchStatInput[]) {
+    await this.stats.delete({ matchId });
+    for (const s of rows) {
+      await this.stats.save(
+        this.stats.create({
+          matchId,
+          userId: s.userId,
+          teamId: s.teamId,
+          goals: s.goals ?? 0,
+          assists: s.assists ?? 0,
+          saves: s.saves ?? 0,
+          score: s.score ?? 0,
+          shots: s.shots ?? 0,
+          demos: s.demos ?? 0,
+          mvp: s.mvp ?? false,
+        }),
+      );
+    }
+    return this.matchStats(matchId);
+  }
+}
+
+interface MatchStatInput {
+  userId: string;
+  teamId: string;
+  goals?: number;
+  assists?: number;
+  saves?: number;
+  score?: number;
+  shots?: number;
+  demos?: number;
+  mvp?: boolean;
 }

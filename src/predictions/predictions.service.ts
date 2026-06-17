@@ -120,6 +120,17 @@ export class PredictionsService {
     return win;
   }
 
+  /** [ADMIN] Cierra todas las ventanas de un partido y marca predicciones cerradas. */
+  async closeForMatch(matchId: string) {
+    await this.windows.update({ matchId }, { isActive: false });
+    const match = await this.matches.findOne({ where: { id: matchId } });
+    if (match) {
+      match.predictionsOpen = false;
+      await this.matches.save(match);
+    }
+    return { ok: true };
+  }
+
   async toggleWindow(id: string, isActive: boolean) {
     const win = await this.windows.findOne({ where: { id } });
     if (!win) throw new NotFoundException('Ventana no encontrada');

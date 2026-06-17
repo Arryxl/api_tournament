@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { existsSync, mkdirSync } from 'fs';
+import { resolve } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -9,8 +11,10 @@ async function bootstrap() {
     mkdirSync(uploadDir, { recursive: true });
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
+  // Sirve las imágenes subidas en /uploads/<archivo> (fuera del prefijo /api).
+  app.useStaticAssets(resolve(uploadDir), { prefix: '/uploads' });
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,

@@ -11,6 +11,7 @@ import { CoinTransaction } from './coin-transaction.entity';
 import { Reward } from './reward.entity';
 import { RewardRedemption } from './reward-redemption.entity';
 import { RegistrationForm } from './registration-form.entity';
+import { TournamentSettings } from './tournament-settings.entity';
 
 export const entities = [
   User,
@@ -26,6 +27,7 @@ export const entities = [
   Reward,
   RewardRedemption,
   RegistrationForm,
+  TournamentSettings,
 ];
 
 export {
@@ -42,4 +44,5 @@ export {
   Reward,
   RewardRedemption,
   RegistrationForm,
+  TournamentSettings,
 };

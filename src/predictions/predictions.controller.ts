@@ -46,4 +46,10 @@ export class PredictionsController {
   toggleWindow(@Param('id') id: string, @Body() body: { isActive: boolean }) {
     return this.predictions.toggleWindow(id, body.isActive);
   }
+
+  @Roles(UserRole.ADMIN)
+  @Patch('match/:matchId/close')
+  closeForMatch(@Param('matchId') matchId: string) {
+    return this.predictions.closeForMatch(matchId);
+  }
 }

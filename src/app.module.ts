@@ -16,6 +16,7 @@ import { PredictionsModule } from './predictions/predictions.module';
 import { CoinsModule } from './coins/coins.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { UploadsModule } from './uploads/uploads.module';
     CoinsModule,
     RewardsModule,
     UploadsModule,
+    SettingsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

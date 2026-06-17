@@ -71,6 +71,12 @@ export class TeamsController {
     return this.teams.rejectRegistration(id, userId, dto.reason);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CANDIDATE)
+  @Get('mine')
+  mine(@CurrentUser('userId') userId: string) {
+    return this.teams.myTeam(userId);
+  }
+
   @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {

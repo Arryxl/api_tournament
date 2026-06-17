@@ -49,6 +49,13 @@ export class TeamsService {
     return team;
   }
 
+  /** Equipo al que pertenece el usuario autenticado (por su membresía). */
+  async myTeam(userId: string) {
+    const member = await this.members.findOne({ where: { userId } });
+    if (!member) return null;
+    return this.findOne(member.teamId);
+  }
+
   // -------- Inscripciones --------
   async register(data: Partial<RegistrationForm>) {
     if (!data.teamName) {
