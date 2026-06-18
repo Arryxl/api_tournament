@@ -37,6 +37,20 @@ export class GroupsController {
     return this.groups.commit(dto.assignments);
   }
 
+  /** Rellena los partidos de grupo con los cruces round-robin actuales. */
+  @Roles(UserRole.ADMIN)
+  @Post('assign-matches')
+  assignMatches() {
+    return this.groups.assignGroupMatches();
+  }
+
+  /** Reconstruye las tablas de posiciones desde los grupos actuales. */
+  @Roles(UserRole.ADMIN)
+  @Post('rebuild-standings')
+  rebuildStandings() {
+    return this.groups.rebuildStandings();
+  }
+
   @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {

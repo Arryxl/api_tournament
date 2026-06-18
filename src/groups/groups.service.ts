@@ -10,8 +10,21 @@ import {
   GroupStanding,
   Match,
   Team,
+  TournamentSettings,
 } from '../entities';
-import { TeamStatus } from '../common/enums';
+import { MatchStatus, TeamStatus } from '../common/enums';
+import { groupLettersFor } from '../common/tournament';
+
+// Calendario round-robin de un grupo de 4 (índices de equipo por jornada).
+// Coincide con G{letra}-1..6 generados por la estructura de partidos.
+const ROUND_ROBIN: [number, number][] = [
+  [0, 1],
+  [2, 3],
+  [0, 2],
+  [1, 3],
+  [0, 3],
+  [1, 2],
+];
 
 @Injectable()
 export class GroupsService {
@@ -21,16 +34,36 @@ export class GroupsService {
     private readonly standings: Repository<GroupStanding>,
     @InjectRepository(Team) private readonly teams: Repository<Team>,
     @InjectRepository(Match) private readonly matches: Repository<Match>,
+    @InjectRepository(TournamentSettings)
+    private readonly settings: Repository<TournamentSettings>,
   ) {}
 
-  async ensureGroups() {
-    const count = await this.groups.count();
-    if (count === 0) {
-      for (const name of ['A', 'B', 'C', 'D']) {
+  /** Nº de equipos configurado (default 16). */
+  private async teamCount(): Promise<number> {
+    const s = await this.settings.findOne({
+      where: {},
+      order: { updatedAt: 'DESC' },
+    });
+    return s?.teamCapacity ?? 16;
+  }
+
+  /**
+   * Garantiza que existan exactamente los grupos que corresponden al nº de
+   * equipos configurado (16 ⇒ A–D, 32 ⇒ A–H). Crea los que falten y devuelve
+   * solo los relevantes (los sobrantes de una config anterior se ignoran).
+   */
+  async ensureGroups(teamCount?: number) {
+    const count = teamCount ?? (await this.teamCount());
+    const letters = groupLettersFor(count);
+    const existing = await this.groups.find();
+    const byName = new Map(existing.map((g) => [g.name, g]));
+    for (const name of letters) {
+      if (!byName.has(name)) {
         await this.groups.save(this.groups.create({ name }));
       }
     }
-    return this.groups.find({ order: { name: 'ASC' } });
+    const all = await this.groups.find({ order: { name: 'ASC' } });
+    return all.filter((g) => letters.includes(g.name));
   }
 
   async findAll() {
@@ -41,6 +74,66 @@ export class GroupsService {
       result.push({ ...g, teams });
     }
     return result;
+  }
+
+  /**
+   * Rellena los partidos de la fase de grupos (G{letra}-1..6) con los cruces
+   * round-robin de cada grupo, a partir de los equipos ya sorteados. No toca
+   * partidos finalizados. Se ejecuta automáticamente tras un sorteo y también
+   * puede dispararse manualmente desde el panel de Partidos.
+   */
+  async assignGroupMatches() {
+    const groups = await this.ensureGroups();
+    let assigned = 0;
+    let pendingGroups = 0;
+    for (const g of groups) {
+      const teams = await this.teams.find({
+        where: { groupId: g.id },
+        order: { createdAt: 'ASC' },
+      });
+      if (teams.length < 4) pendingGroups++;
+      for (let i = 0; i < ROUND_ROBIN.length; i++) {
+        const code = `G${g.name}-${i + 1}`;
+        const match = await this.matches.findOne({ where: { matchCode: code } });
+        if (!match || match.status === MatchStatus.FINISHED) continue;
+        const [hi, ai] = ROUND_ROBIN[i];
+        const home = teams[hi];
+        const away = teams[ai];
+        match.teamHomeId = home ? home.id : null;
+        match.teamAwayId = away ? away.id : null;
+        await this.matches.save(match);
+        if (home && away) assigned++;
+      }
+    }
+    return { ok: true, assigned, pendingGroups };
+  }
+
+  /**
+   * Reconstruye las filas de standings para los equipos ya asignados a grupos,
+   * sin re-sortear ni tocar partidos. Crea las que falten (en cero). Útil si las
+   * tablas se perdieron pero el sorteo (equipo→grupo) sigue intacto. Los puntos
+   * se recalculan solos al cargar resultados.
+   */
+  async rebuildStandings() {
+    const groups = await this.ensureGroups();
+    let created = 0;
+    let teamsInGroups = 0;
+    for (const g of groups) {
+      const teams = await this.teams.find({ where: { groupId: g.id } });
+      teamsInGroups += teams.length;
+      for (const t of teams) {
+        const existing = await this.standings.findOne({
+          where: { groupId: g.id, teamId: t.id },
+        });
+        if (!existing) {
+          await this.standings.save(
+            this.standings.create({ groupId: g.id, teamId: t.id }),
+          );
+          created++;
+        }
+      }
+    }
+    return { ok: true, created, teamsInGroups };
   }
 
   async getStandings() {
@@ -96,6 +189,7 @@ export class GroupsService {
         this.standings.create({ groupId: group.id, teamId: team.id }),
       );
     }
+    await this.assignGroupMatches();
     return this.findAll();
   }
 
@@ -120,6 +214,7 @@ export class GroupsService {
         this.standings.create({ groupId: group.id, teamId: a.teamId }),
       );
     }
+    await this.assignGroupMatches();
     return this.findAll();
   }
 }

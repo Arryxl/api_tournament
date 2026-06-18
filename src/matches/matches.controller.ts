@@ -26,6 +26,18 @@ export class MatchesController {
   }
 
   @Public()
+  @Get('expected')
+  expected() {
+    return this.matches.expected();
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Post('generate')
+  generate(@Body() body: any) {
+    return this.matches.generateBracket(!!body?.preserveDates);
+  }
+
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.matches.findOne(id);
@@ -35,6 +47,18 @@ export class MatchesController {
   @Post()
   create(@Body() body: any) {
     return this.matches.create(body);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Patch('schedule-bulk')
+  scheduleBulk(@Body() body: any) {
+    return this.matches.scheduleBulk(body.items);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/schedule')
+  updateSchedule(@Param('id') id: string, @Body() body: any) {
+    return this.matches.updateSchedule(id, body.scheduledAt ?? null);
   }
 
   @Roles(UserRole.ADMIN)
@@ -51,7 +75,7 @@ export class MatchesController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id/live')
-  live(@Param('id') id: string) {
-    return this.matches.markLive(id);
+  live(@Param('id') id: string, @Body() body: any) {
+    return this.matches.markLive(id, body?.live ?? true);
   }
 }

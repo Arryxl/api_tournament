@@ -23,6 +23,7 @@ export enum PlayerRank {
 
 export enum MatchPhase {
   GROUPS = 'groups',
+  ROUND16 = 'round16',
   QUARTERS = 'quarters',
   SEMIS = 'semis',
   THIRD = 'third',
