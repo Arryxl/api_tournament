@@ -37,18 +37,14 @@ export class GroupsController {
     return this.groups.commit(dto.assignments);
   }
 
-  /** Rellena los partidos de grupo con los cruces round-robin actuales. */
+  /**
+   * Sincroniza la fase de grupos con el sorteo actual: reconstruye las tablas
+   * y rellena los cruces de los partidos de grupo en un solo paso.
+   */
   @Roles(UserRole.ADMIN)
-  @Post('assign-matches')
-  assignMatches() {
-    return this.groups.assignGroupMatches();
-  }
-
-  /** Reconstruye las tablas de posiciones desde los grupos actuales. */
-  @Roles(UserRole.ADMIN)
-  @Post('rebuild-standings')
-  rebuildStandings() {
-    return this.groups.rebuildStandings();
+  @Post('sync')
+  syncGroups() {
+    return this.groups.syncGroups();
   }
 
   @Public()

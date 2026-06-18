@@ -136,6 +136,25 @@ export class GroupsService {
     return { ok: true, created, teamsInGroups };
   }
 
+  /**
+   * Sincroniza la fase de grupos con el sorteo actual en un solo paso:
+   * reconstruye las tablas de posiciones y rellena los cruces de los partidos
+   * de grupo. Idempotente y sin re-sortear — lee el groupId vigente de cada
+   * equipo. Unifica los dos pasos de recuperación que antes iban por separado
+   * (assignGroupMatches + rebuildStandings).
+   */
+  async syncGroups() {
+    const standings = await this.rebuildStandings();
+    const matches = await this.assignGroupMatches();
+    return {
+      ok: true,
+      standingsCreated: standings.created,
+      assigned: matches.assigned,
+      pendingGroups: matches.pendingGroups,
+      teamsInGroups: standings.teamsInGroups,
+    };
+  }
+
   async getStandings() {
     const standings = await this.standings.find({
       relations: { team: true, group: true },

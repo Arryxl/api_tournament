@@ -16,6 +16,7 @@ import {
   User,
 } from '../entities';
 import {
+  MatchFormat,
   MatchPhase,
   MatchStatus,
   TransactionType,
@@ -36,6 +37,7 @@ interface StatInput {
   shots?: number;
   demos?: number;
   mvp?: boolean;
+  extra?: unknown;
 }
 
 @Injectable()
@@ -107,7 +109,13 @@ export class MatchesService {
       }
     }
 
-    const skeleton = buildMatchSkeleton(teamCount);
+    const skeleton = buildMatchSkeleton(teamCount, {
+      round16: settings?.formatRound16 as MatchFormat,
+      quarters: settings?.formatQuarters as MatchFormat,
+      semis: settings?.formatSemis as MatchFormat,
+      third: settings?.formatThird as MatchFormat,
+      final: settings?.formatFinal as MatchFormat,
+    });
     let datesKept = 0;
     for (const m of skeleton) {
       const scheduledAt = preserveDates ? dateByCode.get(m.code) ?? null : null;
@@ -288,6 +296,7 @@ export class MatchesService {
             shots: s.shots ?? 0,
             demos: s.demos ?? 0,
             mvp: s.mvp ?? false,
+            extra: s.extra ?? null,
           }),
         );
       }
@@ -298,6 +307,60 @@ export class MatchesService {
     }
     await this.evaluatePredictions(match);
 
+    return this.findOne(id);
+  }
+
+  /**
+   * Aplica el resultado consolidado de una SERIE eliminatoria (varios juegos):
+   * el marcador es juegos ganados y las stats vienen ya sumadas. Solo finaliza
+   * (estado + ganador + reparto de predicciones) si la serie llegó a la
+   * mayoría; si sigue en curso, queda EN VIVO sin ganador.
+   */
+  async applySeries(
+    id: string,
+    data: { homeScore: number; awayScore: number; stats: StatInput[]; finished: boolean },
+  ) {
+    const match = await this.matches.findOne({ where: { id } });
+    if (!match) throw new NotFoundException('Partido no encontrado');
+
+    match.homeScore = data.homeScore;
+    match.awayScore = data.awayScore;
+    if (data.finished) {
+      match.status = MatchStatus.FINISHED;
+      match.playedAt = new Date();
+      match.winnerId =
+        data.homeScore > data.awayScore
+          ? match.teamHomeId
+          : data.awayScore > data.homeScore
+            ? match.teamAwayId
+            : null;
+    } else {
+      match.status = MatchStatus.LIVE;
+      match.winnerId = null;
+      match.playedAt = null;
+    }
+    await this.matches.save(match);
+
+    await this.playerStats.delete({ matchId: id });
+    for (const s of data.stats) {
+      await this.playerStats.save(
+        this.playerStats.create({
+          matchId: id,
+          userId: s.userId,
+          teamId: s.teamId,
+          goals: s.goals ?? 0,
+          assists: s.assists ?? 0,
+          saves: s.saves ?? 0,
+          score: s.score ?? 0,
+          shots: s.shots ?? 0,
+          demos: s.demos ?? 0,
+          mvp: s.mvp ?? false,
+          extra: s.extra ?? null,
+        }),
+      );
+    }
+
+    if (data.finished) await this.evaluatePredictions(match);
     return this.findOne(id);
   }
 

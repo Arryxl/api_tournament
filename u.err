@@ -1,0 +1,62 @@
+[31m[Nest] 4052  - [39m18/06/2026, 12:21:23 p. m. [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mQueryFailedError: la sintaxis de entrada no es válida para tipo uuid: «e2d6dc32-3659-4642-82ea-5aafebcf550e ebdcbe03-f5fc-4ecc-85f5-dffdc1887577 ad8ede3a-52cd-464c-ba6e-a3f88e2c752a f82a2e9f-00ad-4762-8959-d89218e5d8dd d2199eb4-f626-418e-931f-eef6c57c183f 63cc6d2b-4cd8-47d2-8c86-7eb345259a39 b82f1a41-7561-49db-b5ad-71834f9c3a2e 8df55477-0998-424c-a0e9-1ea2a5a6d186 9114a0b3-4f7c-4ced-ba61-e2d350a25bba 36d145a8-2934-41a4-8ea0-b2dc1b7fb510 1e657596-3f75-4cc4-be68-44d0dc61dd49 f6516d25-a65d-49b6-a961-872f541401c7 424c6e35-5578-4400-a345-56156f05657e e2efa83d-4288-40f8-a1b1-d602f329be37 38e055d1-640c-44e1-9bd2-b8cb38092bc6 06d5b39b-fde1-44a1-8a6b-8223e74b2339 baab4df1-617f-4fc7-9693-8194befad061 dbe4d1f0-a680-43c3-9faa-ff36df1bdff6 40bd5b6a-4e1b-4db5-bdcc-4c127f49cebc d77fc0e5-6883-4c53-bc47-93e166700814 32ebb98a-75ad-4d53-9303-4af289fd18de 39f2f7db-ee10-41c3-a071-02cc73f39d43 00d277a8-0ef7-4050-ba9d-db0afc7bf717 e07a5327-f727-4083-90b6-dcc7777c7168 a0c97297-5923-4dc8-99d2-c539e88617eb 4b978993-b17f-42c1-9512-8a9844546455 87ab8609-95f8-4875-9ce3-1a8b3d1ed5b7 65a5faae-786b-48c1-b1ad-c68ae6980672 6da65606-4a8f-40c4-8afd-74ae73f6b0b1 f9467e2b-84d8-4135-bd32-3abcf3710604 fa3ddfc7-f16f-45c0-b1e2-44d7f9182fcd f2370eae-a90e-44ab-b850-93a4ca21a0a9 f2827392-3e03-479a-98a2-b67e03e65d70»
+    at PostgresQueryRunner.query [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\driver\postgres\PostgresQueryRunner.js:231:19[90m)[39m
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at async SelectQueryBuilder.loadRawResults [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:2301:25[90m)[39m
+    at async SelectQueryBuilder.getRawMany [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:728:29[90m)[39m
+    at async SelectQueryBuilder.executeEntitiesAndRawResults [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:2081:26[90m)[39m
+    at async SelectQueryBuilder.getRawAndEntities [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:766:29[90m)[39m
+    at async SelectQueryBuilder.getOne [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:793:25[90m)[39m
+    at async MatchesService.findOne [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mdist\matches\matches.service.js:114:23[90m)[39m
+    at async [90mC:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:47:62
+    at async [90mC:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17 {
+  query: [32m'SELECT DISTINCT "distinctAlias"."Match_id" AS "ids_Match_id" FROM (SELECT "Match"."id" AS "Match_id", "Match"."match_code" AS "Match_match_code", "Match"."phase" AS "Match_phase", "Match"."team_home_id" AS "Match_team_home_id", "Match"."team_away_id" AS "Match_team_away_id", "Match"."home_score" AS "Match_home_score", "Match"."away_score" AS "Match_away_score", "Match"."winner_id" AS "Match_winner_id", "Match"."scheduled_at" AS "Match_scheduled_at", "Match"."played_at" AS "Match_played_at", "Match"."status" AS "Match_status", "Match"."format" AS "Match_format", "Match"."group_id" AS "Match_group_id", "Match"."round_number" AS "Match_round_number", "Match"."predictions_open" AS "Match_predictions_open", "Match__Match_teamHome"."id" AS "Match__Match_teamHome_id", "Match__Match_teamHome"."name" AS "Match__Match_teamHome_name", "Match__Match_teamHome"."shield_url" AS "Match__Match_teamHome_shield_url", "Match__Match_teamHome"."captain_id" AS "Match__Match_teamHome_captain_id", "Match__Match_teamHome"."group_id" AS "Match__Match_teamHome_group_id", "Match__Match_teamHome"."status" AS "Match__Match_teamHome_status", "Match__Match_teamHome"."contact_method" AS "Match__Match_teamHome_contact_method", "Match__Match_teamHome"."contact_value" AS "Match__Match_teamHome_contact_value", "Match__Match_teamHome"."created_at" AS "Match__Match_teamHome_created_at", "Match__Match_teamAway"."id" AS "Match__Match_teamAway_id", "Match__Match_teamAway"."name" AS "Match__Match_teamAway_name", "Match__Match_teamAway"."shield_url" AS "Match__Match_teamAway_shield_url", "Match__Match_teamAway"."captain_id" AS "Match__Match_teamAway_captain_id", "Match__Match_teamAway"."group_id" AS "Match__Match_teamAway_group_id", "Match__Match_teamAway"."status" AS "Match__Match_teamAway_status", "Match__Match_teamAway"."contact_method" AS "Match__Match_teamAway_contact_method", "Match__Match_teamAway"."contact_value" AS "Match__Match_teamAway_contact_value", "Match__Match_teamAway"."created_at" AS "Match__Match_teamAway_created_at", "Match__Match_group"."id" AS "Match__Match_group_id", "Match__Match_group"."name" AS "Match__Match_group_name", "Match__Match_group"."created_at" AS "Match__Match_group_created_at" FROM "matches" "Match" LEFT JOIN "teams" "Match__Match_teamHome" ON "Match__Match_teamHome"."id"="Match"."team_home_id"  LEFT JOIN "teams" "Match__Match_teamAway" ON "Match__Match_teamAway"."id"="Match"."team_away_id"  LEFT JOIN "groups" "Match__Match_group" ON "Match__Match_group"."id"="Match"."group_id" WHERE (("Match"."id" = $1))) "distinctAlias" ORDER BY "Match_id" ASC LIMIT 1'[39m,
+  parameters: [
+    [32m'e2d6dc32-3659-4642-82ea-5aafebcf550e ebdcbe03-f5fc-4ecc-85f5-dffdc1887577 ad8ede3a-52cd-464c-ba6e-a3f88e2c752a f82a2e9f-00ad-4762-8959-d89218e5d8dd d2199eb4-f626-418e-931f-eef6c57c183f 63cc6d2b-4cd8-47d2-8c86-7eb345259a39 b82f1a41-7561-49db-b5ad-71834f9c3a2e 8df55477-0998-424c-a0e9-1ea2a5a6d186 9114a0b3-4f7c-4ced-ba61-e2d350a25bba 36d145a8-2934-41a4-8ea0-b2dc1b7fb510 1e657596-3f75-4cc4-be68-44d0dc61dd49 f6516d25-a65d-49b6-a961-872f541401c7 424c6e35-5578-4400-a345-56156f05657e e2efa83d-4288-40f8-a1b1-d602f329be37 38e055d1-640c-44e1-9bd2-b8cb38092bc6 06d5b39b-fde1-44a1-8a6b-8223e74b2339 baab4df1-617f-4fc7-9693-8194befad061 dbe4d1f0-a680-43c3-9faa-ff36df1bdff6 40bd5b6a-4e1b-4db5-bdcc-4c127f49cebc d77fc0e5-6883-4c53-bc47-93e166700814 32ebb98a-75ad-4d53-9303-4af289fd18de 39f2f7db-ee10-41c3-a071-02cc73f39d43 00d277a8-0ef7-4050-ba9d-db0afc7bf717 e07a5327-f727-4083-90b6-dcc7777c7168 a0c97297-5923-4dc8-99d2-c539e88617eb 4b978993-b17f-42c1-9512-8a9844546455 87ab8609-95f8-4875-9ce3-1a8b3d1ed5b7 65a5faae-786b-48c1-b1ad-c68ae6980672 6da65606-4a8f-40c4-8afd-74ae73f6b0b1 f9467e2b-84d8-4135-bd32-3abcf3710604 fa3ddfc7-f16f-45c0-b1e2-44d7f9182fcd f2370eae-a90e-44ab-b850-93a4ca21a0a9 f2827392-3e03-479a-98a2-b67e03e65d70'[39m
+  ],
+  driverError: error: la sintaxis de entrada no es válida para tipo uuid: «e2d6dc32-3659-4642-82ea-5aafebcf550e ebdcbe03-f5fc-4ecc-85f5-dffdc1887577 ad8ede3a-52cd-464c-ba6e-a3f88e2c752a f82a2e9f-00ad-4762-8959-d89218e5d8dd d2199eb4-f626-418e-931f-eef6c57c183f 63cc6d2b-4cd8-47d2-8c86-7eb345259a39 b82f1a41-7561-49db-b5ad-71834f9c3a2e 8df55477-0998-424c-a0e9-1ea2a5a6d186 9114a0b3-4f7c-4ced-ba61-e2d350a25bba 36d145a8-2934-41a4-8ea0-b2dc1b7fb510 1e657596-3f75-4cc4-be68-44d0dc61dd49 f6516d25-a65d-49b6-a961-872f541401c7 424c6e35-5578-4400-a345-56156f05657e e2efa83d-4288-40f8-a1b1-d602f329be37 38e055d1-640c-44e1-9bd2-b8cb38092bc6 06d5b39b-fde1-44a1-8a6b-8223e74b2339 baab4df1-617f-4fc7-9693-8194befad061 dbe4d1f0-a680-43c3-9faa-ff36df1bdff6 40bd5b6a-4e1b-4db5-bdcc-4c127f49cebc d77fc0e5-6883-4c53-bc47-93e166700814 32ebb98a-75ad-4d53-9303-4af289fd18de 39f2f7db-ee10-41c3-a071-02cc73f39d43 00d277a8-0ef7-4050-ba9d-db0afc7bf717 e07a5327-f727-4083-90b6-dcc7777c7168 a0c97297-5923-4dc8-99d2-c539e88617eb 4b978993-b17f-42c1-9512-8a9844546455 87ab8609-95f8-4875-9ce3-1a8b3d1ed5b7 65a5faae-786b-48c1-b1ad-c68ae6980672 6da65606-4a8f-40c4-8afd-74ae73f6b0b1 f9467e2b-84d8-4135-bd32-3abcf3710604 fa3ddfc7-f16f-45c0-b1e2-44d7f9182fcd f2370eae-a90e-44ab-b850-93a4ca21a0a9 f2827392-3e03-479a-98a2-b67e03e65d70»
+      at [90mC:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mpg[24m\lib\client.js:646:17
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+      at async PostgresQueryRunner.query [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\driver\postgres\PostgresQueryRunner.js:196:25[90m)[39m
+      at async SelectQueryBuilder.loadRawResults [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:2301:25[90m)[39m
+      at async SelectQueryBuilder.getRawMany [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:728:29[90m)[39m
+      at async SelectQueryBuilder.executeEntitiesAndRawResults [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:2081:26[90m)[39m
+      at async SelectQueryBuilder.getRawAndEntities [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:766:29[90m)[39m
+      at async SelectQueryBuilder.getOne [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4mtypeorm[24m\query-builder\SelectQueryBuilder.js:793:25[90m)[39m
+      at async MatchesService.findOne [90m(C:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mdist\matches\matches.service.js:114:23[90m)[39m
+      at async [90mC:\Users\Pc\Documents\personal\proyectos\Gravity\api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:47:62 {
+    length: [33m1400[39m,
+    severity: [32m'ERROR'[39m,
+    code: [32m'22P02'[39m,
+    detail: [90mundefined[39m,
+    hint: [90mundefined[39m,
+    position: [90mundefined[39m,
+    internalPosition: [90mundefined[39m,
+    internalQuery: [90mundefined[39m,
+    where: [90mundefined[39m,
+    schema: [90mundefined[39m,
+    table: [90mundefined[39m,
+    column: [90mundefined[39m,
+    dataType: [90mundefined[39m,
+    constraint: [90mundefined[39m,
+    file: [32m'd:\\pginstaller_13.auto\\postgres.windows-x64\\src\\backend\\utils\\adt\\uuid.c'[39m,
+    line: [32m'137'[39m,
+    routine: [32m'string_to_uuid'[39m
+  },
+  length: [33m1400[39m,
+  severity: [32m'ERROR'[39m,
+  code: [32m'22P02'[39m,
+  detail: [90mundefined[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [90mundefined[39m,
+  table: [90mundefined[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [90mundefined[39m,
+  file: [32m'd:\\pginstaller_13.auto\\postgres.windows-x64\\src\\backend\\utils\\adt\\uuid.c'[39m,
+  line: [32m'137'[39m,
+  routine: [32m'string_to_uuid'[39m
+}

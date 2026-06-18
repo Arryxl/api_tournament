@@ -28,21 +28,41 @@ export interface MatchSkeleton {
   round?: number;
 }
 
+/** Formato de serie por fase eliminatoria (la fase de grupos es a partido único). */
+export interface PhaseFormats {
+  round16?: MatchFormat;
+  quarters?: MatchFormat;
+  semis?: MatchFormat;
+  third?: MatchFormat;
+  final?: MatchFormat;
+}
+
 /**
  * Esqueleto completo de partidos para `teamCount` equipos: partidos de grupo
- * (G{letra}-1..6) + llave eliminatoria. Sin equipos ni fechas.
+ * (G{letra}-1..6, partido único) + llave eliminatoria con el formato de serie
+ * configurado por fase. Sin equipos ni fechas.
  */
-export function buildMatchSkeleton(teamCount: number): MatchSkeleton[] {
+export function buildMatchSkeleton(
+  teamCount: number,
+  formats: PhaseFormats = {},
+): MatchSkeleton[] {
+  const f = {
+    round16: formats.round16 ?? MatchFormat.BO3,
+    quarters: formats.quarters ?? MatchFormat.BO3,
+    semis: formats.semis ?? MatchFormat.BO5,
+    third: formats.third ?? MatchFormat.BO7,
+    final: formats.final ?? MatchFormat.BO7,
+  };
   const letters = groupLettersFor(teamCount);
   const list: MatchSkeleton[] = [];
 
-  // --- Fase de grupos: round-robin de 4 ⇒ 6 partidos por grupo ---
+  // --- Fase de grupos: round-robin de 4 ⇒ 6 partidos por grupo (partido único) ---
   for (const g of letters) {
     for (let i = 1; i <= 6; i++) {
       list.push({
         code: `G${g}-${i}`,
         phase: MatchPhase.GROUPS,
-        format: MatchFormat.BO3,
+        format: MatchFormat.SINGLE,
         group: g,
         round: Math.ceil(i / 2),
       });
@@ -54,16 +74,16 @@ export function buildMatchSkeleton(teamCount: number): MatchSkeleton[] {
   const qualified = letters.length * 2;
   if (qualified >= 16) {
     for (let i = 1; i <= 8; i++) {
-      list.push({ code: `R${pad2(i)}`, phase: MatchPhase.ROUND16, format: MatchFormat.BO3 });
+      list.push({ code: `R${pad2(i)}`, phase: MatchPhase.ROUND16, format: f.round16 });
     }
   }
   for (let i = 1; i <= 4; i++) {
-    list.push({ code: `Q${pad2(i)}`, phase: MatchPhase.QUARTERS, format: MatchFormat.BO3 });
+    list.push({ code: `Q${pad2(i)}`, phase: MatchPhase.QUARTERS, format: f.quarters });
   }
-  list.push({ code: 'SF1', phase: MatchPhase.SEMIS, format: MatchFormat.BO5 });
-  list.push({ code: 'SF2', phase: MatchPhase.SEMIS, format: MatchFormat.BO5 });
-  list.push({ code: '3L', phase: MatchPhase.THIRD, format: MatchFormat.BO7 });
-  list.push({ code: 'GF', phase: MatchPhase.FINAL, format: MatchFormat.BO7 });
+  list.push({ code: 'SF1', phase: MatchPhase.SEMIS, format: f.semis });
+  list.push({ code: 'SF2', phase: MatchPhase.SEMIS, format: f.semis });
+  list.push({ code: '3L', phase: MatchPhase.THIRD, format: f.third });
+  list.push({ code: 'GF', phase: MatchPhase.FINAL, format: f.final });
 
   return list;
 }

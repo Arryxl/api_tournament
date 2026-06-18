@@ -50,6 +50,27 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsDateString()
   registrationDeadline?: string | null;
+
+  // Formato de serie por fase eliminatoria (se aplica al regenerar la llave).
+  @IsOptional()
+  @IsIn(['bo3', 'bo5', 'bo7'])
+  formatRound16?: string;
+
+  @IsOptional()
+  @IsIn(['bo3', 'bo5', 'bo7'])
+  formatQuarters?: string;
+
+  @IsOptional()
+  @IsIn(['bo3', 'bo5', 'bo7'])
+  formatSemis?: string;
+
+  @IsOptional()
+  @IsIn(['bo3', 'bo5', 'bo7'])
+  formatThird?: string;
+
+  @IsOptional()
+  @IsIn(['bo3', 'bo5', 'bo7'])
+  formatFinal?: string;
 }
 
 @Injectable()
@@ -93,6 +114,11 @@ export class SettingsService {
         ? new Date(dto.registrationDeadline)
         : null;
     }
+    if (dto.formatRound16) settings.formatRound16 = dto.formatRound16;
+    if (dto.formatQuarters) settings.formatQuarters = dto.formatQuarters;
+    if (dto.formatSemis) settings.formatSemis = dto.formatSemis;
+    if (dto.formatThird) settings.formatThird = dto.formatThird;
+    if (dto.formatFinal) settings.formatFinal = dto.formatFinal;
     return this.repo.save(settings);
   }
 }

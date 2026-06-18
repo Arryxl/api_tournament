@@ -37,6 +37,7 @@ export enum MatchStatus {
 }
 
 export enum MatchFormat {
+  SINGLE = 'single', // partido único (fase de grupos)
   BO3 = 'bo3',
   BO5 = 'bo5',
   BO7 = 'bo7',
@@ -58,4 +59,26 @@ export enum RegistrationStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+}
+
+/**
+ * Plataformas con identidad verificable y cuyo ID devuelve ballchasing en los
+ * replays (Steam → SteamID64, Epic → Epic Account ID). Son el ancla para
+ * resolver `replay → jugador → equipo` en el tracking de stats.
+ */
+export enum LinkedPlatform {
+  STEAM = 'steam',
+  EPIC = 'epic',
+}
+
+/**
+ * Estado de un `.replay` subido: en proceso de parseo/match, importado a las
+ * stats, a la espera de revisión manual (algo no se pudo resolver con
+ * confianza) o fallido.
+ */
+export enum ReplayStatus {
+  PROCESSING = 'processing',
+  IMPORTED = 'imported',
+  NEEDS_REVIEW = 'needs_review',
+  FAILED = 'failed',
 }

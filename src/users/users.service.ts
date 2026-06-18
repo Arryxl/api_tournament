@@ -111,7 +111,34 @@ export class UsersService {
       user: this.clean(user),
       matchesPlayed: stats.length,
       totals,
+      extraAvg: this.averageExtra(stats),
       perMatch: stats,
     };
+  }
+
+  /**
+   * Promedia las métricas avanzadas (boost/movimiento/posicionamiento) sobre
+   * los partidos que tengan `extra`. Devuelve null si ninguno lo tiene.
+   */
+  private averageExtra(stats: PlayerStat[]) {
+    const withExtra = stats.filter((s) => s.extra != null);
+    if (withExtra.length === 0) return null;
+    const n = withExtra.length;
+    const acc: any = {};
+    for (const s of withExtra) {
+      const e = s.extra as Record<string, Record<string, number>>;
+      for (const group of Object.keys(e)) {
+        acc[group] ??= {};
+        for (const key of Object.keys(e[group])) {
+          acc[group][key] = (acc[group][key] ?? 0) + (e[group][key] ?? 0);
+        }
+      }
+    }
+    for (const group of Object.keys(acc)) {
+      for (const key of Object.keys(acc[group])) {
+        acc[group][key] = Math.round((acc[group][key] / n) * 100) / 100;
+      }
+    }
+    return acc;
   }
 }

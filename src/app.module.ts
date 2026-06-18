@@ -17,6 +17,8 @@ import { CoinsModule } from './coins/coins.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SettingsModule } from './settings/settings.module';
+import { LinkingModule } from './linking/linking.module';
+import { ReplaysModule } from './replays/replays.module';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { SettingsModule } from './settings/settings.module';
     RewardsModule,
     UploadsModule,
     SettingsModule,
+    LinkingModule,
+    ReplaysModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -32,6 +32,30 @@ export class StatsController {
   }
 
   @Public()
+  @Get('top-shots')
+  topShots() {
+    return this.stats.topShots();
+  }
+
+  @Public()
+  @Get('top-demos')
+  topDemos() {
+    return this.stats.topDemos();
+  }
+
+  @Public()
+  @Get('top-mvp')
+  topMvp() {
+    return this.stats.topMvp();
+  }
+
+  @Public()
+  @Get('summary')
+  summary() {
+    return this.stats.summary();
+  }
+
+  @Public()
   @Get('player/:userId')
   player(@Param('userId') userId: string) {
     return this.stats.player(userId);

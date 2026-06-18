@@ -38,6 +38,23 @@ export class TournamentSettings {
   @Column({ name: 'registration_deadline', type: 'timestamp', nullable: true })
   registrationDeadline: Date | null;
 
+  // Formato de serie por fase eliminatoria (bo3 | bo5 | bo7). La fase de grupos
+  // es siempre a partido único. Se aplican al generar la llave.
+  @Column({ name: 'format_round16', type: 'varchar', length: 10, default: 'bo3' })
+  formatRound16: string;
+
+  @Column({ name: 'format_quarters', type: 'varchar', length: 10, default: 'bo3' })
+  formatQuarters: string;
+
+  @Column({ name: 'format_semis', type: 'varchar', length: 10, default: 'bo5' })
+  formatSemis: string;
+
+  @Column({ name: 'format_third', type: 'varchar', length: 10, default: 'bo7' })
+  formatThird: string;
+
+  @Column({ name: 'format_final', type: 'varchar', length: 10, default: 'bo7' })
+  formatFinal: string;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

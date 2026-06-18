@@ -59,6 +59,11 @@ export class PlayerStat {
   @Column({ type: 'boolean', default: false })
   mvp: boolean;
 
+  // Métricas avanzadas del replay (boost/movimiento/posicionamiento). Null si
+  // la stat se cargó a mano sin replay. Estructura: PlayerExtraStats.
+  @Column({ name: 'extra', type: 'jsonb', nullable: true })
+  extra: unknown | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

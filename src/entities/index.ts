@@ -12,6 +12,8 @@ import { Reward } from './reward.entity';
 import { RewardRedemption } from './reward-redemption.entity';
 import { RegistrationForm } from './registration-form.entity';
 import { TournamentSettings } from './tournament-settings.entity';
+import { LinkedAccount } from './linked-account.entity';
+import { Replay } from './replay.entity';
 
 export const entities = [
   User,
@@ -28,6 +30,8 @@ export const entities = [
   RewardRedemption,
   RegistrationForm,
   TournamentSettings,
+  LinkedAccount,
+  Replay,
 ];
 
 export {
@@ -45,4 +49,6 @@ export {
   RewardRedemption,
   RegistrationForm,
   TournamentSettings,
+  LinkedAccount,
+  Replay,
 };
