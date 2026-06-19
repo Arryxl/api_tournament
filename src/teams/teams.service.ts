@@ -15,11 +15,13 @@ import {
   User,
 } from '../entities';
 import {
+  NotificationType,
   PlayerRank,
   RegistrationStatus,
   TeamStatus,
   UserRole,
 } from '../common/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TeamsService {
@@ -34,7 +36,24 @@ export class TeamsService {
     @InjectRepository(TournamentSettings)
     private readonly settings: Repository<TournamentSettings>,
     private readonly dataSource: DataSource,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /** Notifica a todos los miembros del equipo con cuenta. */
+  private async notifyTeam(
+    teamId: string,
+    type: NotificationType,
+    title: string,
+    link = '/me',
+    body?: string,
+  ) {
+    const list = await this.members.find({ where: { teamId } });
+    for (const m of list) {
+      if (m.userId) {
+        await this.notifications.notify(m.userId, type, title, link, body);
+      }
+    }
+  }
 
   /** Quita el hash de contraseña del usuario embebido en cada miembro. */
   private sanitize(team: Team): Team {
@@ -146,37 +165,49 @@ export class TeamsService {
           steam: (form as any)[`player${n}Steam`] as string | null,
           rank: (form as any)[`player${n}Rank`] as string | null,
           shot: (form as any)[`player${n}Screenshot`] as string | null,
+          userId: (form as any)[`player${n}UserId`] as string | null,
         }))
-        .filter((p) => p.epic || p.steam);
+        .filter((p) => p.epic || p.steam || p.userId);
 
       const generated: { playerNumber: number; username: string; password: string }[] = [];
       let captainId: string | null = null;
+      let credIndex = 0;
 
-      for (let i = 0; i < players.length; i++) {
-        const p = players[i];
-        const cred = credentials?.[i];
-        const baseName =
-          (p.epic || p.steam || `${form.teamName}_p${p.num}`)
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '')
-            .slice(0, 40) || `${form.teamName.toLowerCase()}p${p.num}`;
-        const username = cred?.username || `${baseName}_${Math.random().toString(36).slice(2, 6)}`;
-        const password = cred?.password || Math.random().toString(36).slice(2, 10);
-
-        const user = manager.create(User, {
-          username,
-          passwordHash: await bcrypt.hash(password, 10),
-          role: UserRole.CANDIDATE,
-          coins: 0,
-        });
-        await manager.save(user);
-
+      for (const p of players) {
         const isCaptain = form.captainPlayer === p.num;
-        if (isCaptain) captainId = user.id;
+        let memberUserId: string;
+
+        if (p.userId) {
+          // Inscripción de reclutamiento: la cuenta ya existe → promover.
+          await manager.update(User, { id: p.userId }, { role: UserRole.CANDIDATE });
+          memberUserId = p.userId;
+        } else {
+          // Inscripción tradicional: crear la cuenta con credenciales.
+          const cred = credentials?.[credIndex++];
+          const baseName =
+            (p.epic || p.steam || `${form.teamName}_p${p.num}`)
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, '')
+              .slice(0, 40) || `${form.teamName.toLowerCase()}p${p.num}`;
+          const username = cred?.username || `${baseName}_${Math.random().toString(36).slice(2, 6)}`;
+          const password = cred?.password || Math.random().toString(36).slice(2, 10);
+
+          const user = manager.create(User, {
+            username,
+            passwordHash: await bcrypt.hash(password, 10),
+            role: UserRole.CANDIDATE,
+            coins: 0,
+          });
+          await manager.save(user);
+          memberUserId = user.id;
+          generated.push({ playerNumber: p.num, username, password });
+        }
+
+        if (isCaptain) captainId = memberUserId;
 
         const member = manager.create(TeamMember, {
           teamId: team.id,
-          userId: user.id,
+          userId: memberUserId,
           epicUsername: p.epic,
           steamUsername: p.steam,
           rank: (p.rank as PlayerRank) ?? null,
@@ -185,8 +216,6 @@ export class TeamsService {
           playerNumber: p.num,
         });
         await manager.save(member);
-
-        generated.push({ playerNumber: p.num, username, password });
       }
 
       if (captainId) {
@@ -200,6 +229,15 @@ export class TeamsService {
       await manager.save(form);
 
       return { team, credentials: generated };
+    }).then(async (res) => {
+      // Avisar a los jugadores con cuenta (inscripciones de reclutamiento).
+      await this.notifyTeam(
+        res.team.id,
+        NotificationType.TEAM_CREATED,
+        `¡${res.team.name} fue inscrito al torneo!`,
+        '/me',
+      );
+      return res;
     });
   }
 
@@ -304,6 +342,16 @@ export class TeamsService {
     }
     Object.assign(member, data);
     await this.members.save(member);
+    if (member.userId) {
+      await this.notifications.notify(
+        member.userId,
+        NotificationType.MEMBER_LEFT,
+        data.isCaptain
+          ? 'Ahora eres el capitán de tu equipo'
+          : 'El admin actualizó tus datos en el equipo',
+        '/me',
+      );
+    }
     return member;
   }
 
@@ -315,6 +363,12 @@ export class TeamsService {
       throw new BadRequestException('Este jugador no tiene una cuenta asociada');
     }
     await this.users.update({ id: member.userId }, { isActive: active });
+    await this.notifications.notify(
+      member.userId,
+      NotificationType.MEMBER_LEFT,
+      active ? 'Tu acceso al torneo fue restaurado' : 'Tu acceso al torneo fue revocado',
+      '/me',
+    );
     return { ok: true, active };
   }
 
@@ -324,8 +378,205 @@ export class TeamsService {
     if (!member) throw new NotFoundException('Jugador no encontrado');
     if (member.userId) {
       await this.users.update({ id: member.userId }, { isActive: false });
+      await this.notifications.notify(
+        member.userId,
+        NotificationType.MEMBER_LEFT,
+        'Fuiste removido de tu equipo por el administrador',
+        '/me',
+      );
     }
     await this.members.delete({ id: memberId });
+    return { ok: true };
+  }
+
+  // -------- Reclutamiento (reutilizado por RecruitmentService) --------
+
+  /**
+   * Cupo total del roster según la configuración del torneo
+   * (titulares por lado + suplentes) y cuántas plazas quedan libres.
+   */
+  async rosterCapacity(teamId: string) {
+    const settings = await this.settings.findOne({
+      where: {},
+      order: { updatedAt: 'DESC' },
+    });
+    const max = (settings?.playersPerSide ?? 3) + (settings?.substitutes ?? 2);
+    const current = await this.members.count({ where: { teamId } });
+    return { max, current, hasVacancy: current < max };
+  }
+
+  /**
+   * Vincula una cuenta YA EXISTENTE como miembro del equipo (no crea usuario
+   * ni credenciales, a diferencia de `addMember`). Promueve el rol del usuario
+   * a `candidate`. Usado al aceptar una solicitud de reclutamiento.
+   */
+  async addExistingUserAsMember(
+    teamId: string,
+    userId: string,
+    data: {
+      epicUsername?: string | null;
+      steamUsername?: string | null;
+      rank?: string | null;
+      screenshotUrl?: string | null;
+    },
+  ) {
+    const team = await this.teams.findOne({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Equipo no encontrado');
+
+    const already = await this.members.findOne({ where: { userId } });
+    if (already) {
+      throw new BadRequestException('El jugador ya pertenece a un equipo');
+    }
+
+    const { hasVacancy } = await this.rosterCapacity(teamId);
+    if (!hasVacancy) {
+      throw new BadRequestException('El equipo ya completó su roster');
+    }
+
+    const existing = await this.members.find({ where: { teamId } });
+    const nextNumber =
+      existing.reduce((max, m) => Math.max(max, m.playerNumber), 0) + 1;
+
+    return this.dataSource.transaction(async (manager) => {
+      await manager.update(User, { id: userId }, { role: UserRole.CANDIDATE });
+
+      const member = manager.create(TeamMember, {
+        teamId,
+        userId,
+        epicUsername: data.epicUsername ?? null,
+        steamUsername: data.steamUsername ?? null,
+        rank: (data.rank as PlayerRank) ?? null,
+        screenshotUrl: data.screenshotUrl ?? null,
+        isCaptain: false,
+        playerNumber: nextNumber,
+      });
+      await manager.save(member);
+      return member;
+    });
+  }
+
+  /**
+   * Desvincula a un jugador del equipo MANTENIENDO su cuenta activa (a
+   * diferencia de `removeMember`, que la deshabilita). Si el usuario no queda
+   * en ningún otro equipo, baja su rol a `public`. Usado al aceptar una
+   * solicitud de salida.
+   */
+  async detachMember(memberId: string) {
+    const member = await this.members.findOne({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Jugador no encontrado');
+    const userId = member.userId;
+    await this.members.delete({ id: memberId });
+    if (userId) {
+      const stillMember = await this.members.findOne({ where: { userId } });
+      if (!stillMember) {
+        await this.users.update({ id: userId }, { role: UserRole.PUBLIC });
+      }
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Postula un equipo formado por reclutamiento como INSCRIPCIÓN pendiente
+   * (`RegistrationForm`), NO como equipo. Pasa por el mismo flujo de aprobación
+   * del admin que el registro tradicional; las cuentas de los jugadores ya
+   * existen y quedan enlazadas vía `playerN_user_id` (al aprobar se promueven a
+   * candidato sin generar credenciales). El primer miembro es el capitán.
+   */
+  async createRegistrationFromMembers(data: {
+    name: string;
+    shieldUrl?: string | null;
+    contactMethod?: string | null;
+    contactValue?: string | null;
+    members: {
+      userId: string;
+      isCaptain?: boolean;
+      epicUsername?: string | null;
+      steamUsername?: string | null;
+      rank?: string | null;
+      screenshotUrl?: string | null;
+    }[];
+  }) {
+    const existingTeam = await this.teams.findOne({ where: { name: data.name } });
+    if (existingTeam) {
+      throw new BadRequestException('Ya existe un equipo con ese nombre');
+    }
+
+    const form = this.forms.create({
+      teamName: data.name,
+      shieldUrl: data.shieldUrl ?? null,
+      contactMethod: data.contactMethod ?? null,
+      contactValue: data.contactValue ?? null,
+      status: RegistrationStatus.PENDING,
+    });
+    data.members.slice(0, 5).forEach((m, i) => {
+      const n = i + 1;
+      (form as any)[`player${n}Epic`] = m.epicUsername ?? null;
+      (form as any)[`player${n}Steam`] = m.steamUsername ?? null;
+      (form as any)[`player${n}Rank`] = m.rank ?? null;
+      (form as any)[`player${n}Screenshot`] = m.screenshotUrl ?? null;
+      (form as any)[`player${n}UserId`] = m.userId;
+      if (m.isCaptain) form.captainPlayer = n;
+    });
+    if (!form.captainPlayer) form.captainPlayer = 1;
+    await this.forms.save(form);
+    return form;
+  }
+
+  /**
+   * Descarta un equipo liberando a sus jugadores (rol `public`, cuenta activa)
+   * SIN notificar — uso interno para reparar equipos creados por versiones
+   * anteriores antes de re-postularlos como inscripción.
+   */
+  async discardTeam(id: string) {
+    const team = await this.teams.findOne({ where: { id } });
+    if (!team) return { ok: true };
+    const list = await this.members.find({ where: { teamId: id } });
+    for (const m of list) {
+      if (m.userId) {
+        await this.users.update(
+          { id: m.userId },
+          { role: UserRole.PUBLIC, isActive: true },
+        );
+      }
+    }
+    await this.teams.delete({ id }); // cascade elimina los team_members
+    return { ok: true };
+  }
+
+  /** Inscribe (aprueba) un equipo pendiente y avisa a sus jugadores. */
+  async approveTeam(id: string) {
+    const team = await this.teams.findOne({ where: { id } });
+    if (!team) throw new NotFoundException('Equipo no encontrado');
+    team.status = TeamStatus.APPROVED;
+    await this.teams.save(team);
+    await this.notifyTeam(
+      team.id,
+      NotificationType.TEAM_CREATED,
+      `¡${team.name} fue inscrito al torneo!`,
+      '/me',
+    );
+    return team;
+  }
+
+  /**
+   * Saca un equipo del torneo (rechazo de inscripción o eliminación). Avisa a
+   * los jugadores, los libera (rol `public`, cuenta activa) y borra el equipo.
+   */
+  async removeTeam(id: string, mode: 'rejected' | 'deleted') {
+    const team = await this.teams.findOne({ where: { id } });
+    if (!team) throw new NotFoundException('Equipo no encontrado');
+    const title =
+      mode === 'rejected'
+        ? `${team.name} no fue inscrito al torneo`
+        : `${team.name} fue eliminado del torneo`;
+    await this.notifyTeam(team.id, NotificationType.REQUEST_REJECTED, title, '/me');
+    const list = await this.members.find({ where: { teamId: team.id } });
+    for (const m of list) {
+      if (m.userId) {
+        await this.users.update({ id: m.userId }, { role: UserRole.PUBLIC });
+      }
+    }
+    await this.teams.delete({ id: team.id });
     return { ok: true };
   }
 

@@ -6,11 +6,32 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
+  IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { TournamentSettings } from '../entities';
+
+/**
+ * Claves válidas para `phaseDates`. Las eliminatorias se muestran u ocultan en
+ * el front según cuántos equipos clasifiquen, pero aquí aceptamos todas y
+ * descartamos cualquier clave desconocida que llegue en el body.
+ */
+const PHASE_KEYS = [
+  'registrationOpen',
+  'registrationClose',
+  'groupDraw',
+  'groupStage',
+  'round32',
+  'round16',
+  'quarters',
+  'semis',
+  'third',
+  'final',
+] as const;
 
 /**
  * DTO del PATCH /settings. Los decoradores de class-validator son
@@ -71,6 +92,38 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsIn(['bo3', 'bo5', 'bo7'])
   formatFinal?: string;
+
+  /** Fechas de las fases (mapa fase → `YYYY-MM-DD`). Reemplaza el mapa entero. */
+  @IsOptional()
+  @IsObject()
+  phaseDates?: Record<string, string> | null;
+
+  // Premios por puesto (texto libre). Cadena vacía o null limpia el campo.
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  prizeFirst?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  prizeSecond?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  prizeThird?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  prizeNote?: string | null;
+}
+
+/** Recorta un texto y devuelve null si queda vacío (para limpiar columnas). */
+function clean(v: string | null | undefined): string | null {
+  const t = (v ?? '').trim();
+  return t.length ? t : null;
 }
 
 @Injectable()
@@ -119,6 +172,31 @@ export class SettingsService {
     if (dto.formatSemis) settings.formatSemis = dto.formatSemis;
     if (dto.formatThird) settings.formatThird = dto.formatThird;
     if (dto.formatFinal) settings.formatFinal = dto.formatFinal;
+    if (dto.phaseDates !== undefined) {
+      settings.phaseDates = this.sanitizePhaseDates(dto.phaseDates);
+    }
+    if (dto.prizeFirst !== undefined) settings.prizeFirst = clean(dto.prizeFirst);
+    if (dto.prizeSecond !== undefined) settings.prizeSecond = clean(dto.prizeSecond);
+    if (dto.prizeThird !== undefined) settings.prizeThird = clean(dto.prizeThird);
+    if (dto.prizeNote !== undefined) settings.prizeNote = clean(dto.prizeNote);
     return this.repo.save(settings);
+  }
+
+  /**
+   * Reemplaza el mapa de fechas: conserva solo las claves de fase conocidas con
+   * un valor `YYYY-MM-DD` válido. Devuelve null si no queda ninguna.
+   */
+  private sanitizePhaseDates(
+    input: Record<string, string> | null,
+  ): Record<string, string> | null {
+    if (!input || typeof input !== 'object') return null;
+    const out: Record<string, string> = {};
+    for (const key of PHASE_KEYS) {
+      const raw = input[key];
+      if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+        out[key] = raw.trim();
+      }
+    }
+    return Object.keys(out).length ? out : null;
   }
 }

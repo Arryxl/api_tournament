@@ -66,6 +66,20 @@ export class RegistrationForm {
   @Column({ name: 'player5_screenshot', type: 'varchar', length: 500, nullable: true })
   player5Screenshot: string | null;
 
+  // Cuando la inscripción proviene del módulo de reclutamiento, cada jugador
+  // ya tiene cuenta: estos campos enlazan al usuario existente para que la
+  // aprobación NO genere credenciales nuevas sino que vincule la cuenta.
+  @Column({ name: 'player1_user_id', type: 'uuid', nullable: true })
+  player1UserId: string | null;
+  @Column({ name: 'player2_user_id', type: 'uuid', nullable: true })
+  player2UserId: string | null;
+  @Column({ name: 'player3_user_id', type: 'uuid', nullable: true })
+  player3UserId: string | null;
+  @Column({ name: 'player4_user_id', type: 'uuid', nullable: true })
+  player4UserId: string | null;
+  @Column({ name: 'player5_user_id', type: 'uuid', nullable: true })
+  player5UserId: string | null;
+
   @Column({ name: 'captain_player', type: 'int', nullable: true })
   captainPlayer: number | null;
 

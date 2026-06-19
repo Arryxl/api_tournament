@@ -10,6 +10,7 @@ import {
 } from '../entities';
 import { TeamsService } from './teams.service';
 import { TeamsController } from './teams.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TeamsController } from './teams.controller';
       PlayerStat,
       TournamentSettings,
     ]),
+    NotificationsModule,
   ],
   controllers: [TeamsController],
   providers: [TeamsService],

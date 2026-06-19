@@ -125,6 +125,24 @@ export class TeamsController {
     return this.teams.update(id, body);
   }
 
+  @Roles(UserRole.ADMIN)
+  @Post(':id/approve')
+  approveTeam(@Param('id') id: string) {
+    return this.teams.approveTeam(id);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Post(':id/reject')
+  rejectTeam(@Param('id') id: string) {
+    return this.teams.removeTeam(id, 'rejected');
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Delete(':id')
+  deleteTeam(@Param('id') id: string) {
+    return this.teams.removeTeam(id, 'deleted');
+  }
+
   // -------- Roster (admin) --------
 
   @Roles(UserRole.ADMIN)

@@ -55,6 +55,32 @@ export class TournamentSettings {
   @Column({ name: 'format_final', type: 'varchar', length: 10, default: 'bo7' })
   formatFinal: string;
 
+  /**
+   * Fechas de las fases del torneo para la línea de tiempo de la landing.
+   * Mapa fase → fecha ISO `YYYY-MM-DD`. Las claves de fase eliminatoria
+   * (round32/round16) solo aplican si la estructura clasifica suficientes
+   * equipos; el front decide cuáles mostrar a partir del nº de grupos.
+   * Claves: registrationOpen, registrationClose, groupDraw, groupStage,
+   * round32, round16, quarters, semis, third, final.
+   */
+  @Column({ name: 'phase_dates', type: 'jsonb', nullable: true })
+  phaseDates: Record<string, string> | null;
+
+  // Premios por puesto (texto libre: "$ 300 USD", "Merch + rol", …). Editables
+  // desde el admin; expuestos a cambios (de ahí la nota).
+  @Column({ name: 'prize_first', type: 'varchar', length: 160, nullable: true })
+  prizeFirst: string | null;
+
+  @Column({ name: 'prize_second', type: 'varchar', length: 160, nullable: true })
+  prizeSecond: string | null;
+
+  @Column({ name: 'prize_third', type: 'varchar', length: 160, nullable: true })
+  prizeThird: string | null;
+
+  /** Nota al pie de los premios ("Premios sujetos a cambios"…). */
+  @Column({ name: 'prize_note', type: 'varchar', length: 280, nullable: true })
+  prizeNote: string | null;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

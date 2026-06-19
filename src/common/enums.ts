@@ -82,3 +82,68 @@ export enum ReplayStatus {
   NEEDS_REVIEW = 'needs_review',
   FAILED = 'failed',
 }
+
+/**
+ * Tipo de anuncio en el tablón de reclutamiento (LFT / mercado de fichajes):
+ *  - PLAYER_LFT: un jugador libre se publica buscando equipo.
+ *  - TEAM_LFP: un equipo (inscrito o en formación) publica que busca jugador.
+ */
+export enum RecruitmentType {
+  PLAYER_LFT = 'player_lft',
+  TEAM_LFP = 'team_lfp',
+}
+
+/** Estado de un anuncio del tablón. HIDDEN lo aplica un admin al moderar. */
+export enum RecruitmentStatus {
+  OPEN = 'open',
+  CLOSED = 'closed',
+  HIDDEN = 'hidden',
+}
+
+/** Posición preferida del jugador en cancha. */
+export enum PlayerPosition {
+  STRIKER = 'striker',
+  GOALIE = 'goalie',
+  FLEX = 'flex',
+}
+
+/**
+ * Dirección de una solicitud de unión:
+ *  - PLAYER_TO_TEAM: el jugador se postula y el capitán resuelve.
+ *  - TEAM_TO_PLAYER: el capitán invita y el jugador resuelve.
+ */
+export enum JoinDirection {
+  PLAYER_TO_TEAM = 'player_to_team',
+  TEAM_TO_PLAYER = 'team_to_player',
+}
+
+/** Estado de una solicitud (unión, salida o invitación a formar equipo). */
+export enum RequestStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * Estado de un equipo en formación (`team_draft`): mientras junta gente
+ * (PENDING), una vez completados los titulares y creado el equipo (COMPLETED),
+ * o si el capitán lo cancela antes de completarse (CANCELLED).
+ */
+export enum TeamDraftStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+/** Tipo de notificación in-app (campana). */
+export enum NotificationType {
+  TEAM_INVITE = 'team_invite', // un equipo inscrito te invitó
+  DRAFT_INVITE = 'draft_invite', // te invitaron a formar un equipo nuevo
+  APPLICATION = 'application', // un jugador se postuló a tu equipo (capitán)
+  REQUEST_ACCEPTED = 'request_accepted',
+  REQUEST_REJECTED = 'request_rejected',
+  TEAM_CREATED = 'team_created', // el equipo en formación se completó
+  LEAVE_REQUEST = 'leave_request', // pedido de salida (capitán)
+  MEMBER_LEFT = 'member_left',
+}

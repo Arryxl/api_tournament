@@ -14,6 +14,13 @@ import { RegistrationForm } from './registration-form.entity';
 import { TournamentSettings } from './tournament-settings.entity';
 import { LinkedAccount } from './linked-account.entity';
 import { Replay } from './replay.entity';
+import { RecruitmentPost } from './recruitment-post.entity';
+import { JoinRequest } from './join-request.entity';
+import { TeamLeaveRequest } from './team-leave-request.entity';
+import { PlayerProfile } from './player-profile.entity';
+import { TeamDraft } from './team-draft.entity';
+import { TeamDraftInvite } from './team-draft-invite.entity';
+import { Notification } from './notification.entity';
 
 export const entities = [
   User,
@@ -32,6 +39,13 @@ export const entities = [
   TournamentSettings,
   LinkedAccount,
   Replay,
+  RecruitmentPost,
+  JoinRequest,
+  TeamLeaveRequest,
+  PlayerProfile,
+  TeamDraft,
+  TeamDraftInvite,
+  Notification,
 ];
 
 export {
@@ -51,4 +65,11 @@ export {
   TournamentSettings,
   LinkedAccount,
   Replay,
+  RecruitmentPost,
+  JoinRequest,
+  TeamLeaveRequest,
+  PlayerProfile,
+  TeamDraft,
+  TeamDraftInvite,
+  Notification,
 };

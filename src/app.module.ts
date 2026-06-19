@@ -19,6 +19,8 @@ import { UploadsModule } from './uploads/uploads.module';
 import { SettingsModule } from './settings/settings.module';
 import { LinkingModule } from './linking/linking.module';
 import { ReplaysModule } from './replays/replays.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { ReplaysModule } from './replays/replays.module';
     SettingsModule,
     LinkingModule,
     ReplaysModule,
+    RecruitmentModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
