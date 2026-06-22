@@ -11,6 +11,17 @@ export enum TeamStatus {
 }
 
 export enum PlayerRank {
+  BRONZE1 = 'bronze1',
+  BRONZE2 = 'bronze2',
+  BRONZE3 = 'bronze3',
+  SILVER1 = 'silver1',
+  SILVER2 = 'silver2',
+  SILVER3 = 'silver3',
+  GOLD1 = 'gold1',
+  GOLD2 = 'gold2',
+  GOLD3 = 'gold3',
+  PLAT1 = 'plat1',
+  PLAT2 = 'plat2',
   PLAT3 = 'plat3',
   PLAT4 = 'plat4',
   DIA1 = 'dia1',
@@ -19,6 +30,11 @@ export enum PlayerRank {
   CHAMP1 = 'champ1',
   CHAMP2 = 'champ2',
   CHAMP3 = 'champ3',
+  GC1 = 'gc1',
+  GC2 = 'gc2',
+  GC3 = 'gc3',
+  // Supersonic Legend: rango tope (sin divisiones).
+  SSL = 'ssl',
 }
 
 export enum MatchPhase {

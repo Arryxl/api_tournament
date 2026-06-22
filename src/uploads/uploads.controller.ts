@@ -7,12 +7,26 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, resolve } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { randomUUID } from 'crypto';
-import { Public } from '../common/decorators';
+import { Public, Roles } from '../common/decorators';
+import { UserRole } from '../common/enums';
+
+const UPLOAD_ROOT = process.env.UPLOAD_DIR || './uploads';
 
 const storage = diskStorage({
-  destination: process.env.UPLOAD_DIR || './uploads',
+  destination: UPLOAD_ROOT,
+  filename: (_req, file, cb) => {
+    cb(null, `${randomUUID()}${extname(file.originalname)}`);
+  },
+});
+
+// Escudos de equipos predefinidos en su carpeta dedicada (orden + edición).
+const presetTeamDir = resolve(UPLOAD_ROOT, 'preset-teams');
+if (!existsSync(presetTeamDir)) mkdirSync(presetTeamDir, { recursive: true });
+const presetStorage = diskStorage({
+  destination: presetTeamDir,
   filename: (_req, file, cb) => {
     cb(null, `${randomUUID()}${extname(file.originalname)}`);
   },
@@ -51,5 +65,19 @@ export class UploadsController {
   screenshot(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No se recibió archivo');
     return this.url(file);
+  }
+
+  /** Escudo de un equipo predefinido (solo admin, carpeta dedicada). */
+  @Roles(UserRole.ADMIN)
+  @Post('preset-team')
+  @UseInterceptors(
+    FileInterceptor('file', { ...options, storage: presetStorage }),
+  )
+  presetTeam(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No se recibió archivo');
+    return {
+      url: `/uploads/preset-teams/${file.filename}`,
+      filename: file.filename,
+    };
   }
 }

@@ -22,6 +22,47 @@ export class TournamentSettings {
   @Column({ name: 'tournament_started', type: 'boolean', default: false })
   tournamentStarted: boolean;
 
+  /**
+   * Nombre del torneo/temporada (ej. "Gravity League S01"). Es distinto de la
+   * marca fija "Gravity": se muestra en título del navegador, landing, overlays
+   * y el escenario del sorteo. Si es null el front cae a "Gravity".
+   */
+  @Column({ name: 'tournament_name', type: 'varchar', length: 120, nullable: true })
+  tournamentName: string | null;
+
+  /**
+   * Modo "equipos predefinidos": cuando está activo, la inscripción y el
+   * reclutamiento dejan de pedir nombre+escudo libres y el capitán elige uno de
+   * los equipos del catálogo (preset-teams.ts). También habilita el apartado de
+   * "equipos disponibles" en la landing. OFF = comportamiento clásico.
+   */
+  @Column({ name: 'predefined_teams_mode', type: 'boolean', default: false })
+  predefinedTeamsMode: boolean;
+
+  /** Etiqueta de temporada/edición (ej. "Temporada 01"). Null → "Temporada 01". */
+  @Column({ name: 'season_label', type: 'varchar', length: 60, nullable: true })
+  seasonLabel: string | null;
+
+  /** Plataforma (ej. "Cross-play"). Null → "Cross-play". Promo de la landing. */
+  @Column({ name: 'platform', type: 'varchar', length: 60, nullable: true })
+  platform: string | null;
+
+  /** Lema/tagline de la landing. Null → tagline por defecto. */
+  @Column({ name: 'tagline', type: 'varchar', length: 280, nullable: true })
+  tagline: string | null;
+
+  /** Entrada gratis (true) o de pago (false). Promo de la landing. */
+  @Column({ name: 'entry_free', type: 'boolean', default: true })
+  entryFree: boolean;
+
+  /** Rango mínimo elegible (clave de PlayerRank, ej. "plat3"). */
+  @Column({ name: 'min_rank', type: 'varchar', length: 20, default: 'plat3' })
+  minRank: string;
+
+  /** Rango máximo elegible (clave de PlayerRank, ej. "gc1"). */
+  @Column({ name: 'max_rank', type: 'varchar', length: 20, default: 'gc1' })
+  maxRank: string;
+
   /** Nº de equipos del torneo (16 ó 32). Define grupos y estructura de llave. */
   @Column({ name: 'team_capacity', type: 'int', default: 16 })
   teamCapacity: number;

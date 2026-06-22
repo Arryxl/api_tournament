@@ -14,6 +14,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
   // Sirve las imágenes subidas en /uploads/<archivo> (fuera del prefijo /api).
+  // Incluye los escudos de equipos predefinidos en /uploads/preset-teams/.
   app.useStaticAssets(resolve(uploadDir), { prefix: '/uploads' });
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',

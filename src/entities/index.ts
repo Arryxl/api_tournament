@@ -21,6 +21,7 @@ import { PlayerProfile } from './player-profile.entity';
 import { TeamDraft } from './team-draft.entity';
 import { TeamDraftInvite } from './team-draft-invite.entity';
 import { Notification } from './notification.entity';
+import { PresetTeam } from './preset-team.entity';
 
 export const entities = [
   User,
@@ -46,6 +47,7 @@ export const entities = [
   TeamDraft,
   TeamDraftInvite,
   Notification,
+  PresetTeam,
 ];
 
 export {
@@ -72,4 +74,5 @@ export {
   TeamDraft,
   TeamDraftInvite,
   Notification,
+  PresetTeam,
 };

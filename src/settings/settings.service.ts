@@ -20,6 +20,18 @@ import { TournamentSettings } from '../entities';
  * el front según cuántos equipos clasifiquen, pero aquí aceptamos todas y
  * descartamos cualquier clave desconocida que llegue en el body.
  */
+/** Claves válidas de rango (PlayerRank) para min/maxRank — escalera completa. */
+const RANK_KEYS = [
+  'bronze1', 'bronze2', 'bronze3',
+  'silver1', 'silver2', 'silver3',
+  'gold1', 'gold2', 'gold3',
+  'plat1', 'plat2', 'plat3',
+  'dia1', 'dia2', 'dia3',
+  'champ1', 'champ2', 'champ3',
+  'gc1', 'gc2', 'gc3',
+  'ssl',
+];
+
 const PHASE_KEYS = [
   'registrationOpen',
   'registrationClose',
@@ -46,6 +58,49 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsBoolean()
   tournamentStarted?: boolean;
+
+  /** Nombre del torneo/temporada. Cadena vacía o null lo limpia (cae a "Gravity"). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  tournamentName?: string | null;
+
+  /** Activa el modo de equipos predefinidos (selector de catálogo). */
+  @IsOptional()
+  @IsBoolean()
+  predefinedTeamsMode?: boolean;
+
+  /** Etiqueta de temporada/edición (ej. "Temporada 01"). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  seasonLabel?: string | null;
+
+  /** Plataforma (ej. "Cross-play"). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  platform?: string | null;
+
+  /** Lema/tagline de la landing. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  tagline?: string | null;
+
+  /** Entrada gratis (true) o de pago (false). */
+  @IsOptional()
+  @IsBoolean()
+  entryFree?: boolean;
+
+  /** Rango mínimo/máximo elegible (clave de PlayerRank). */
+  @IsOptional()
+  @IsIn(RANK_KEYS)
+  minRank?: string;
+
+  @IsOptional()
+  @IsIn(RANK_KEYS)
+  maxRank?: string;
 
   /** Nº de equipos del torneo. Solo 16 o 32 (múltiplos de 4 con grupos válidos). */
   @IsOptional()
@@ -153,6 +208,18 @@ export class SettingsService {
     if (typeof dto.tournamentStarted === 'boolean') {
       settings.tournamentStarted = dto.tournamentStarted;
     }
+    if (dto.tournamentName !== undefined) {
+      settings.tournamentName = clean(dto.tournamentName);
+    }
+    if (typeof dto.predefinedTeamsMode === 'boolean') {
+      settings.predefinedTeamsMode = dto.predefinedTeamsMode;
+    }
+    if (dto.seasonLabel !== undefined) settings.seasonLabel = clean(dto.seasonLabel);
+    if (dto.platform !== undefined) settings.platform = clean(dto.platform);
+    if (dto.tagline !== undefined) settings.tagline = clean(dto.tagline);
+    if (typeof dto.entryFree === 'boolean') settings.entryFree = dto.entryFree;
+    if (dto.minRank) settings.minRank = dto.minRank;
+    if (dto.maxRank) settings.maxRank = dto.maxRank;
     if (typeof dto.teamCapacity === 'number' && dto.teamCapacity > 0) {
       settings.teamCapacity = Math.floor(dto.teamCapacity);
     }

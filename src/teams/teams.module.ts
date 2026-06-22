@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   PlayerStat,
+  PresetTeam,
   RegistrationForm,
   Team,
+  TeamDraft,
   TeamMember,
   TournamentSettings,
   User,
@@ -18,6 +20,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Team,
       TeamMember,
       RegistrationForm,
+      TeamDraft,
+      PresetTeam,
       User,
       PlayerStat,
       TournamentSettings,

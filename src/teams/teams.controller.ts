@@ -47,6 +47,13 @@ class MemberAccessDto {
   active: boolean;
 }
 
+class PresetDto {
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() region?: string | null;
+  @IsOptional() @IsString() placementLabel?: string | null;
+  @IsOptional() @IsString() logo?: string | null;
+}
+
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teams: TeamsService) {}
@@ -61,6 +68,31 @@ export class TeamsController {
   @Get('count')
   count() {
     return this.teams.count();
+  }
+
+  /** Catálogo de equipos predefinidos con su disponibilidad. */
+  @Public()
+  @Get('presets')
+  presets() {
+    return this.teams.listPresets();
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Post('presets')
+  createPreset(@Body() dto: PresetDto) {
+    return this.teams.createPreset({ name: dto.name ?? '', ...dto });
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Patch('presets/:id')
+  updatePreset(@Param('id') id: string, @Body() dto: PresetDto) {
+    return this.teams.updatePreset(id, dto);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Delete('presets/:id')
+  deletePreset(@Param('id') id: string) {
+    return this.teams.deletePreset(id);
   }
 
   @Public()

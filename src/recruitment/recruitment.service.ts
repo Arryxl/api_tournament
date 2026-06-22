@@ -21,6 +21,7 @@ import {
 import {
   JoinDirection,
   NotificationType,
+  PlayerRank,
   RecruitmentStatus,
   RecruitmentType,
   RegistrationStatus,
@@ -92,6 +93,16 @@ export class RecruitmentService {
 
   private memberOf(userId: string) {
     return this.members.findOne({ where: { userId } });
+  }
+
+  /** Cuenta cuántos de los usuarios dados tienen rango Grand Champion 1. */
+  private async countGc1(userIds: string[]) {
+    let n = 0;
+    for (const id of userIds) {
+      const p = await this.profiles.findOne({ where: { userId: id } });
+      if (p?.rank === PlayerRank.GC1) n++;
+    }
+    return n;
   }
 
   private isProfileComplete(p: PlayerProfile | null): p is PlayerProfile {
@@ -711,9 +722,20 @@ export class RecruitmentService {
         'Indica un medio de contacto del capitán para la inscripción',
       );
     }
-    const existing = await this.teams.findOne({ where: { name: data.teamName } });
-    if (existing) {
-      throw new BadRequestException('Ya existe un equipo con ese nombre');
+    // En modo equipos predefinidos: el nombre debe ser un preset disponible y
+    // el escudo se fija desde el catálogo (reserva al crear el draft). Si no,
+    // valida unicidad contra los equipos existentes como antes.
+    const preset = await this.teamsService.resolvePresetForCreate(data.teamName);
+    if (preset) {
+      data.teamName = preset.name;
+      data.shieldUrl = preset.shieldUrl ?? undefined;
+    } else {
+      const existing = await this.teams.findOne({
+        where: { name: data.teamName },
+      });
+      if (existing) {
+        throw new BadRequestException('Ya existe un equipo con ese nombre');
+      }
     }
 
     const { requiredStarters, maxRoster } = await this.rosterTargets();
@@ -862,7 +884,20 @@ export class RecruitmentService {
     if (await this.memberOf(userId)) {
       throw new BadRequestException('Ya perteneces a un equipo');
     }
-    await this.requireProfile(userId);
+    const myProfile = await this.requireProfile(userId);
+
+    // Regla GC1: el equipo no puede terminar con más de un Grand Champion 1.
+    if (myProfile.rank === PlayerRank.GC1) {
+      const acceptedNow = await this.draftInvites.find({
+        where: { draftId: draft.id, status: RequestStatus.ACCEPTED },
+      });
+      const committed = [draft.captainId, ...acceptedNow.map((i) => i.userId)];
+      if ((await this.countGc1(committed)) >= 1) {
+        throw new BadRequestException(
+          'Este equipo ya tiene un Grand Champion 1 (GC1). Solo se permite uno por equipo, no puedes unirte como GC1.',
+        );
+      }
+    }
 
     invite.status = RequestStatus.ACCEPTED;
     invite.acceptedAt = new Date();
