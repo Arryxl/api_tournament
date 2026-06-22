@@ -1,22 +1,41 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Post,
   Query,
   Res,
 } from '@nestjs/common';
+import { IsString } from 'class-validator';
 import type { Response } from 'express';
 import { LinkingService } from './linking.service';
 import { CurrentUser, Public, Roles } from '../common/decorators';
 import { LinkedPlatform, UserRole } from '../common/enums';
 
-function parsePlatform(value: string): LinkedPlatform {
+/** Solo las plataformas con OAuth/OpenID (Steam/Epic). */
+function parseVerifiedPlatform(value: string): LinkedPlatform {
   if (value === LinkedPlatform.STEAM || value === LinkedPlatform.EPIC) {
     return value;
   }
   throw new BadRequestException(`Plataforma no soportada: ${value}`);
+}
+
+/** Cualquier plataforma vinculable (incluye consolas). */
+function parseAnyPlatform(value: string): LinkedPlatform {
+  if (
+    Object.values(LinkedPlatform).includes(value as LinkedPlatform)
+  ) {
+    return value as LinkedPlatform;
+  }
+  throw new BadRequestException(`Plataforma no soportada: ${value}`);
+}
+
+class ConsoleIdDto {
+  @IsString()
+  platformId: string;
 }
 
 @Controller('link')
@@ -45,7 +64,24 @@ export class LinkingController {
     @CurrentUser('userId') userId: string,
     @Param('platform') platform: string,
   ) {
-    return this.linking.start(userId, parsePlatform(platform));
+    return this.linking.start(userId, parseVerifiedPlatform(platform));
+  }
+
+  /**
+   * Fija el ID de una cuenta de CONSOLA (psn/xbox/switch) declarado por el
+   * usuario. No hay OAuth: se guarda como vínculo no verificado para el matcher.
+   */
+  @Post(':platform/console')
+  setConsole(
+    @CurrentUser('userId') userId: string,
+    @Param('platform') platform: string,
+    @Body() dto: ConsoleIdDto,
+  ) {
+    return this.linking.setConsoleId(
+      userId,
+      parseAnyPlatform(platform),
+      dto.platformId,
+    );
   }
 
   /** Callback del proveedor (lo invoca el navegador del usuario, sin JWT). */
@@ -56,7 +92,7 @@ export class LinkingController {
     @Query() query: Record<string, string>,
     @Res() res: Response,
   ) {
-    const p = parsePlatform(platform);
+    const p = parseVerifiedPlatform(platform);
     try {
       if (p === LinkedPlatform.STEAM) {
         await this.linking.handleSteamCallback(query);
@@ -76,6 +112,6 @@ export class LinkingController {
     @CurrentUser('userId') userId: string,
     @Param('platform') platform: string,
   ) {
-    return this.linking.unlink(userId, parsePlatform(platform));
+    return this.linking.unlink(userId, parseAnyPlatform(platform));
   }
 }

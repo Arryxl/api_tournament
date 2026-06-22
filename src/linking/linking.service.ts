@@ -162,6 +162,70 @@ export class LinkingService {
     return this.links.find({ where: { userId } });
   }
 
+  /** Plataformas que se esperan de un jugador según los IDs de su inscripción. */
+  private expectedPlatforms(member: TeamMember | null): LinkedPlatform[] {
+    const expected: LinkedPlatform[] = [];
+    if (member?.steamUsername) expected.push(LinkedPlatform.STEAM);
+    if (member?.epicUsername) expected.push(LinkedPlatform.EPIC);
+    if (member?.psnUsername) expected.push(LinkedPlatform.PSN);
+    if (member?.xboxUsername) expected.push(LinkedPlatform.XBOX);
+    if (member?.switchUsername) expected.push(LinkedPlatform.SWITCH);
+    return expected;
+  }
+
+  /**
+   * Fija/actualiza el ID de una cuenta de CONSOLA (PSN/Xbox/Switch). No hay
+   * OAuth: el jugador declara su online ID y se guarda como vínculo NO
+   * verificado (verifiedAt = null), que es el que cruza el matcher de replays.
+   * Sincroniza también el username en su team_member.
+   */
+  async setConsoleId(
+    userId: string,
+    platform: LinkedPlatform,
+    platformId: string,
+  ): Promise<LinkedAccount> {
+    if (platform === LinkedPlatform.STEAM || platform === LinkedPlatform.EPIC) {
+      throw new BadRequestException(
+        'Steam y Epic se vinculan por su botón de verificación, no por ID.',
+      );
+    }
+    const id = platformId.trim();
+    if (!id) throw new BadRequestException('Escribe tu ID de la plataforma');
+
+    const owned = await this.links.findOne({ where: { platform, platformId: id } });
+    if (owned && owned.userId !== userId) {
+      throw new ConflictException(
+        'Ese ID ya está vinculado a otro usuario del torneo',
+      );
+    }
+    // Sincroniza el username del team_member (alimenta "qué falta vincular").
+    const field =
+      platform === LinkedPlatform.PSN
+        ? 'psnUsername'
+        : platform === LinkedPlatform.XBOX
+          ? 'xboxUsername'
+          : 'switchUsername';
+    await this.members.update({ userId }, { [field]: id } as any);
+
+    const existing =
+      owned ?? (await this.links.findOne({ where: { userId, platform } }));
+    if (existing) {
+      existing.platformId = id;
+      existing.displayName = id;
+      existing.verifiedAt = null;
+      return this.links.save(existing);
+    }
+    return this.links.save(
+      this.links.create({
+        userId,
+        platform,
+        platformId: id,
+        displayName: id,
+        verifiedAt: null,
+      }),
+    );
+  }
+
   async unlink(userId: string, platform: LinkedPlatform) {
     await this.links.delete({ userId, platform });
     return { ok: true };
@@ -175,9 +239,7 @@ export class LinkingService {
   async statusForUser(userId: string) {
     const accounts = await this.forUser(userId);
     const member = await this.members.findOne({ where: { userId } });
-    const expected: LinkedPlatform[] = [];
-    if (member?.steamUsername) expected.push(LinkedPlatform.STEAM);
-    if (member?.epicUsername) expected.push(LinkedPlatform.EPIC);
+    const expected = this.expectedPlatforms(member);
 
     const linkedPlatforms = new Set(accounts.map((a) => a.platform));
     const complete = expected.every((p) => linkedPlatforms.has(p));
@@ -207,9 +269,7 @@ export class LinkingService {
     });
     const rows = await Promise.all(
       members.map(async (m) => {
-        const expected: LinkedPlatform[] = [];
-        if (m.steamUsername) expected.push(LinkedPlatform.STEAM);
-        if (m.epicUsername) expected.push(LinkedPlatform.EPIC);
+        const expected = this.expectedPlatforms(m);
         const accounts = m.userId ? await this.forUser(m.userId) : [];
         const linked = new Set(accounts.map((a) => a.platform));
         const missing = expected.filter((p) => !linked.has(p));
@@ -232,9 +292,19 @@ export class LinkingService {
    * y su team_member). Punto de enganche para la ingesta de replays.
    */
   async resolveByPlatformId(platform: LinkedPlatform, platformId: string) {
-    return this.links.findOne({
-      where: { platform, platformId },
-      relations: { user: true },
-    });
+    // Steam/Epic: ID estable → match exacto. Consolas: ballchasing devuelve el
+    // online ID/gamertag (texto), así que comparamos sin distinguir mayúsculas.
+    if (platform === LinkedPlatform.STEAM || platform === LinkedPlatform.EPIC) {
+      return this.links.findOne({
+        where: { platform, platformId },
+        relations: { user: true },
+      });
+    }
+    return this.links
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.user', 'user')
+      .where('a.platform = :platform', { platform })
+      .andWhere('LOWER(a.platform_id) = LOWER(:platformId)', { platformId })
+      .getOne();
   }
 }

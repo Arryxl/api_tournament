@@ -66,6 +66,44 @@ export class RegistrationForm {
   @Column({ name: 'player5_screenshot', type: 'varchar', length: 500, nullable: true })
   player5Screenshot: string | null;
 
+  // IDs de consola por jugador (PSN online ID / Xbox gamertag / Switch). Se
+  // copian a team_member y se vinculan (sin verificar) al aprobar, para cruzar
+  // las stats de jugadores de consola en los replays.
+  @Column({ name: 'player1_psn', type: 'varchar', length: 100, nullable: true })
+  player1Psn: string | null;
+  @Column({ name: 'player1_xbox', type: 'varchar', length: 100, nullable: true })
+  player1Xbox: string | null;
+  @Column({ name: 'player1_switch', type: 'varchar', length: 100, nullable: true })
+  player1Switch: string | null;
+
+  @Column({ name: 'player2_psn', type: 'varchar', length: 100, nullable: true })
+  player2Psn: string | null;
+  @Column({ name: 'player2_xbox', type: 'varchar', length: 100, nullable: true })
+  player2Xbox: string | null;
+  @Column({ name: 'player2_switch', type: 'varchar', length: 100, nullable: true })
+  player2Switch: string | null;
+
+  @Column({ name: 'player3_psn', type: 'varchar', length: 100, nullable: true })
+  player3Psn: string | null;
+  @Column({ name: 'player3_xbox', type: 'varchar', length: 100, nullable: true })
+  player3Xbox: string | null;
+  @Column({ name: 'player3_switch', type: 'varchar', length: 100, nullable: true })
+  player3Switch: string | null;
+
+  @Column({ name: 'player4_psn', type: 'varchar', length: 100, nullable: true })
+  player4Psn: string | null;
+  @Column({ name: 'player4_xbox', type: 'varchar', length: 100, nullable: true })
+  player4Xbox: string | null;
+  @Column({ name: 'player4_switch', type: 'varchar', length: 100, nullable: true })
+  player4Switch: string | null;
+
+  @Column({ name: 'player5_psn', type: 'varchar', length: 100, nullable: true })
+  player5Psn: string | null;
+  @Column({ name: 'player5_xbox', type: 'varchar', length: 100, nullable: true })
+  player5Xbox: string | null;
+  @Column({ name: 'player5_switch', type: 'varchar', length: 100, nullable: true })
+  player5Switch: string | null;
+
   // Cuando la inscripción proviene del módulo de reclutamiento, cada jugador
   // ya tiene cuenta: estos campos enlazan al usuario existente para que la
   // aprobación NO genere credenciales nuevas sino que vincule la cuenta.

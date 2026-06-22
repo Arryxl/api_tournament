@@ -455,10 +455,12 @@ export class ReplaysService {
       players.map(async (p) => {
         const platform = this.toPlatform(p.platform);
         if (!platform) return { ...p, userId: null, teamId: null };
-        const link = await this.linking.resolveByPlatformId(
-          platform,
-          p.platformId,
-        );
+        // En consola ballchasing suele no traer un ID estable: el dato que
+        // cruza con lo declarado en la inscripción es el nombre en pantalla.
+        const isConsole =
+          platform !== LinkedPlatform.STEAM && platform !== LinkedPlatform.EPIC;
+        const key = isConsole && !p.platformId ? p.name : p.platformId;
+        const link = await this.linking.resolveByPlatformId(platform, key);
         if (!link) return { ...p, userId: null, teamId: null };
         const member = await this.members.findOne({
           where: { userId: link.userId },
@@ -469,9 +471,26 @@ export class ReplaysService {
   }
 
   private toPlatform(value: string): LinkedPlatform | null {
-    if (value === 'steam') return LinkedPlatform.STEAM;
-    if (value === 'epic') return LinkedPlatform.EPIC;
-    return null;
+    switch (value) {
+      case 'steam':
+        return LinkedPlatform.STEAM;
+      case 'epic':
+        return LinkedPlatform.EPIC;
+      // ballchasing usa estos identificadores para consola.
+      case 'ps4':
+      case 'ps5':
+      case 'psn':
+      case 'playstation':
+        return LinkedPlatform.PSN;
+      case 'xbox':
+      case 'xboxone':
+        return LinkedPlatform.XBOX;
+      case 'switch':
+      case 'nintendo':
+        return LinkedPlatform.SWITCH;
+      default:
+        return null;
+    }
   }
 
   /** Equipo mayoritario entre los jugadores resueltos de un color. */

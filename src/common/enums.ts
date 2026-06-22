@@ -85,7 +85,20 @@ export enum RegistrationStatus {
 export enum LinkedPlatform {
   STEAM = 'steam',
   EPIC = 'epic',
+  PSN = 'psn',
+  XBOX = 'xbox',
+  SWITCH = 'switch',
 }
+
+/**
+ * Plataformas que se verifican por OAuth/OpenID (ID criptográficamente seguro).
+ * Las demás (consolas) usan el ID/online-ID que el jugador declara: no hay login
+ * verificable de Sony/Microsoft/Nintendo, pero ese ID es el que aparece en el
+ * replay, así que sirve igual para cruzar las stats.
+ */
+export const VERIFIED_PLATFORMS = [LinkedPlatform.STEAM, LinkedPlatform.EPIC];
+export const isVerifiedPlatform = (p: LinkedPlatform) =>
+  VERIFIED_PLATFORMS.includes(p);
 
 /**
  * Estado de un `.replay` subido: en proceso de parseo/match, importado a las

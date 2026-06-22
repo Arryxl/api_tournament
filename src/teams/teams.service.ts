@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import {
+  LinkedAccount,
   PlayerStat,
   PresetTeam,
   RegistrationForm,
@@ -17,6 +18,7 @@ import {
   User,
 } from '../entities';
 import {
+  LinkedPlatform,
   NotificationType,
   PlayerRank,
   RegistrationStatus,
@@ -398,11 +400,14 @@ export class TeamsService {
           num: n,
           epic: (form as any)[`player${n}Epic`] as string | null,
           steam: (form as any)[`player${n}Steam`] as string | null,
+          psn: (form as any)[`player${n}Psn`] as string | null,
+          xbox: (form as any)[`player${n}Xbox`] as string | null,
+          switch: (form as any)[`player${n}Switch`] as string | null,
           rank: (form as any)[`player${n}Rank`] as string | null,
           shot: (form as any)[`player${n}Screenshot`] as string | null,
           userId: (form as any)[`player${n}UserId`] as string | null,
         }))
-        .filter((p) => p.epic || p.steam || p.userId);
+        .filter((p) => p.epic || p.steam || p.psn || p.xbox || p.switch || p.userId);
 
       const generated: { playerNumber: number; username: string; password: string }[] = [];
       let captainId: string | null = null;
@@ -445,12 +450,40 @@ export class TeamsService {
           userId: memberUserId,
           epicUsername: p.epic,
           steamUsername: p.steam,
+          psnUsername: p.psn,
+          xboxUsername: p.xbox,
+          switchUsername: p.switch,
           rank: (p.rank as PlayerRank) ?? null,
           screenshotUrl: p.shot,
           isCaptain,
           playerNumber: p.num,
         });
         await manager.save(member);
+
+        // Pre-vincula los IDs de consola declarados (no verificados): el matcher
+        // de replays los usa directamente. Steam/Epic se vinculan aparte por OAuth.
+        const consoleLinks: [LinkedPlatform, string | null][] = [
+          [LinkedPlatform.PSN, p.psn],
+          [LinkedPlatform.XBOX, p.xbox],
+          [LinkedPlatform.SWITCH, p.switch],
+        ];
+        for (const [platform, value] of consoleLinks) {
+          const id = value?.trim();
+          if (!id) continue;
+          const taken = await manager.findOne(LinkedAccount, {
+            where: { platform, platformId: id },
+          });
+          if (taken) continue; // ya reclamado por otro usuario → se omite
+          await manager.save(
+            manager.create(LinkedAccount, {
+              userId: memberUserId,
+              platform,
+              platformId: id,
+              displayName: id,
+              verifiedAt: null,
+            }),
+          );
+        }
       }
 
       if (captainId) {

@@ -44,8 +44,9 @@ export class LinkedAccount {
   @Column({ name: 'display_name', type: 'varchar', length: 100, nullable: true })
   displayName: string | null;
 
-  @Column({ name: 'verified_at', type: 'timestamp' })
-  verifiedAt: Date;
+  /** Fecha de verificación OAuth (Steam/Epic). Null en consolas (ID declarado). */
+  @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
+  verifiedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

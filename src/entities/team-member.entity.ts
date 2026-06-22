@@ -36,6 +36,17 @@ export class TeamMember {
   @Column({ name: 'steam_username', type: 'varchar', length: 100, nullable: true })
   steamUsername: string | null;
 
+  // IDs de consola (online ID / gamertag). No se verifican por OAuth; el ID
+  // declarado es el que aparece en el replay y sirve para cruzar las stats.
+  @Column({ name: 'psn_username', type: 'varchar', length: 100, nullable: true })
+  psnUsername: string | null;
+
+  @Column({ name: 'xbox_username', type: 'varchar', length: 100, nullable: true })
+  xboxUsername: string | null;
+
+  @Column({ name: 'switch_username', type: 'varchar', length: 100, nullable: true })
+  switchUsername: string | null;
+
   @Column({ type: 'enum', enum: PlayerRank, nullable: true })
   rank: PlayerRank | null;
 
