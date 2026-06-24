@@ -538,6 +538,9 @@ export class TeamsService {
     data: {
       epicUsername?: string;
       steamUsername?: string;
+      psnUsername?: string;
+      xboxUsername?: string;
+      switchUsername?: string;
       rank?: string;
       screenshotUrl?: string;
       isCaptain?: boolean;
@@ -547,8 +550,16 @@ export class TeamsService {
   ) {
     const team = await this.teams.findOne({ where: { id: teamId } });
     if (!team) throw new NotFoundException('Equipo no encontrado');
-    if (!data.epicUsername && !data.steamUsername) {
-      throw new BadRequestException('El jugador necesita al menos un usuario (Epic o Steam)');
+    if (
+      !data.epicUsername &&
+      !data.steamUsername &&
+      !data.psnUsername &&
+      !data.xboxUsername &&
+      !data.switchUsername
+    ) {
+      throw new BadRequestException(
+        'El jugador necesita al menos un usuario (Epic, Steam, PSN, Xbox o Switch)',
+      );
     }
     await this.assertGc1Capacity(teamId, data.rank);
 
@@ -557,7 +568,14 @@ export class TeamsService {
 
     return this.dataSource.transaction(async (manager) => {
       const base =
-        (data.epicUsername || data.steamUsername || `${team.name}_p${nextNumber}`)
+        (
+          data.epicUsername ||
+          data.steamUsername ||
+          data.psnUsername ||
+          data.xboxUsername ||
+          data.switchUsername ||
+          `${team.name}_p${nextNumber}`
+        )
           .toLowerCase()
           .replace(/[^a-z0-9_]/g, '')
           .slice(0, 40) || `${team.name.toLowerCase()}p${nextNumber}`;
@@ -581,12 +599,40 @@ export class TeamsService {
         userId: user.id,
         epicUsername: data.epicUsername ?? null,
         steamUsername: data.steamUsername ?? null,
+        psnUsername: data.psnUsername ?? null,
+        xboxUsername: data.xboxUsername ?? null,
+        switchUsername: data.switchUsername ?? null,
         rank: (data.rank as PlayerRank) ?? null,
         screenshotUrl: data.screenshotUrl ?? null,
         isCaptain: !!data.isCaptain,
         playerNumber: nextNumber,
       });
       await manager.save(member);
+
+      // Pre-vincula los IDs de consola declarados (no verificados): el matcher
+      // de replays los usa directamente. Steam/Epic se vinculan aparte por OAuth.
+      const consoleLinks: [LinkedPlatform, string | null | undefined][] = [
+        [LinkedPlatform.PSN, data.psnUsername],
+        [LinkedPlatform.XBOX, data.xboxUsername],
+        [LinkedPlatform.SWITCH, data.switchUsername],
+      ];
+      for (const [platform, value] of consoleLinks) {
+        const id = value?.trim();
+        if (!id) continue;
+        const taken = await manager.findOne(LinkedAccount, {
+          where: { platform, platformId: id },
+        });
+        if (taken) continue; // ya reclamado por otro usuario → se omite
+        await manager.save(
+          manager.create(LinkedAccount, {
+            userId: user.id,
+            platform,
+            platformId: id,
+            displayName: id,
+            verifiedAt: null,
+          }),
+        );
+      }
 
       if (data.isCaptain) {
         await manager.update(Team, { id: teamId }, { captainId: user.id });

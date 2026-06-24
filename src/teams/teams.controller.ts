@@ -27,6 +27,9 @@ class ApproveDto {
 class AddMemberDto {
   @IsOptional() @IsString() epicUsername?: string;
   @IsOptional() @IsString() steamUsername?: string;
+  @IsOptional() @IsString() psnUsername?: string;
+  @IsOptional() @IsString() xboxUsername?: string;
+  @IsOptional() @IsString() switchUsername?: string;
   @IsOptional() @IsString() rank?: string;
   @IsOptional() @IsString() screenshotUrl?: string;
   @IsOptional() @IsBoolean() isCaptain?: boolean;
